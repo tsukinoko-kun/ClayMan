@@ -1,6 +1,6 @@
 The original Clay library license can be found [here](https://github.com/nicbarker/clay/blob/main/LICENSE.md).
 
-In similar fashion, the Functional-Clay license is as follows:
+In similar fashion, the ClayMan license is as follows:
 
 zlib/libpng license
 
