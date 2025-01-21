@@ -27,11 +27,11 @@ While this is an innovative and clever way to do things, you may find yourself w
 
 ## About ClayMan
 
-`ClayMan` is mainly a wrapper class for ClayMan. It handles the boilerplate and provides a flexible interface for Clay with a few handy additions
+`ClayMan` is mainly a wrapper class for Clay. It handles the boilerplate and provides a flexible interface for Clay with a few handy additions
 
 ### Features
 
-- Handles the initialization of ClayMan.
+- Handles the initialization of Clay.
 - Exposes the underlying functions of Clay in a simplified form.
 - Manages Clay_Strings to allow for std::string usage.
 - Provides handy utility functions for configuration parameters.
