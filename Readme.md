@@ -501,5 +501,5 @@ Since this library is just a wrapper for Clay; any original clay structs, macros
 
 ## Change Log
 
-- January 19, 2025
+- January 21, 2025
     - ClayMan was published.
