@@ -165,6 +165,8 @@ ClayMan.openElementWithParams(
 } ClayMan.closeElement();
 ```
 
+**NOTE**: There is currently a 100000 char limit for the internal string arena, this includes all characters for all strings and string literals passed into Clay functions each frame.
+
 ## How to use ClayMan (with Raylib renderer)
 To use this library in your project, simply copy the `clayman.hpp` header, as well as the `include` folder (which has the compatible version of `clay.h` as well as the Raylib renderer) into your working directory. Then, in your project:
 
@@ -287,6 +289,19 @@ In Clay, the `CLAY` macro takes configurations and/or ID macros as parameters. C
 
 The `CLAY_TEXT` macro usually takes it's own configuration and is an isolated element without children. ClayMan captures this as its own function, `textElement`. See Strings section for an example.
 
+
+## Advanced Use
+If you want to set up a `Clay_Arena`, `Clay_ErrorHandler`, and/or text-measure function yourself, you will need to call `Clay_Initialize` and `Clay_SetMeasureTextFunctionuse` before using any ClayMan functions. You will also need to use the `ClayMan` constructor without the text_measure function:
+```cpp
+/*Example coming soon*/
+```
+
+If you do not want to use a layout callback by calling `buildLayout`, then you will need to use `beginLayout` and `endLayout` instead of calling `Clay_BeginLayout` and `Clay_EndLayout` yourself.
+Otherwise the ClayMan string arena will not reset properly each frame. Also, the auto-close feature will not be used, and if you forget a `closeElement` call, the program will crash.
+```cpp
+/*Example coming soon*/
+```
+
 ## API
 
 The `ClayMan` class has the following public functions:
@@ -295,18 +310,23 @@ The `ClayMan` class has the following public functions:
 - `ClayMan`
     - Purpose: Initializes the Clay context and creates the ClayMan instance.
     - Params:
-        - int **windowWidth**, the initial window width.
-        - int **windowHeight**, the initial window height.
+        - uint32_t **windowWidth**, the initial window width.
+        - uint32_t **windowHeight**, the initial window height.
         - **Clay_Dimensions (*measureTextFunction)(Clay_String *text, Clay_TextElementConfig *config)**, the renderer's text measuring function.
     - Returns: **ClayMan** instance.
-
+- `ClayMan`
+    - Purpose: This constructor only creates the ClayMan object, you will need to create a `Clay_Arena` and call `Clay_Initialize` and `Clay_SetMeasureTextFunction` before using ClayMan functions.
+    - Params:
+        - uint32_t **windowWidth**, the initial window width.
+        - uint32_t **windowHeight**, the initial window height.
+    - Returns: **ClayMan** instance.
 ### Primary
 The following functions are the primary calls to operate the ClayMan instance, and are required.
 - `updateClayState`
     - Purpose: Updates the Clay context with mouse, window, and frame information. These values typically come from the renderer. Call this once per frame, usually before calling buildLayout.
     - Params:
-        - int **windowWidth**, the current window width.
-        - int **windowHeight**, the current window height.
+        - uint32_t **windowWidth**, the current window width.
+        - uint32_t **windowHeight**, the current window height.
         - float **mouseX**, the current mouse position x-coordinate.
         - float **mouseY**, the current mouse position y-coordinate.
         - float **scrollDeltaX**, the current mousewheel x-delta.
@@ -315,7 +335,7 @@ The following functions are the primary calls to operate the ClayMan instance, a
         - bool **leftButtonDown**, the current state of the left mouse button.
     - Returns: None.
 - `buildLayout`
-    - Purpose: Wraps the user layout callback between Clay_BeginLayout and Clay_EndLayout and calls them in order. Call this once per frame, before rendering.
+    - Purpose: Wraps the user layout callback between `beginLayout` and `endLayout` and calls them in order. It also tracks and auto-closes elements to prevent crashes. Call this once per frame, before rendering.
     - Params: **void (*userLayoutFunction)()**, the user's callback function for their layout.
     - Returns: **Clay_RenderCommandArray** instance, to be used by renderer.
 

@@ -50,11 +50,13 @@ class ClayMan {
     public:
         //This constructor initializes clay automatically. It creates the Clay_Arena and uses a default Clay_ErrorHandler.
         ClayMan(
-            const int initialWidth, 
-            const int initialHeight, 
+            const uint32_t initialWidth, 
+            const uint32_t initialHeight, 
             Clay_Dimensions (*measureTextFunction)(Clay_StringSlice text, Clay_TextElementConfig *config, uintptr_t userData)
         ):windowWidth(initialWidth), windowHeight(initialHeight)
         {
+            if(windowWidth == 0){windowWidth = 1;}
+            if(windowHeight == 0){windowHeight = 1;}
             uint64_t clayRequiredMemory = Clay_MinMemorySize();
             Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(clayRequiredMemory, malloc(clayRequiredMemory));
 
@@ -67,8 +69,9 @@ class ClayMan {
         }
 
         //This constructor only creates the ClayMan object, you will need to create a Clay_Arena and call Clay_Initialize and Clay_SetMeasureTextFunction before using ClayMan functions
-        ClayMan(const int initialWidth, const int initialHeight):windowWidth(initialWidth), windowHeight(initialHeight){
-
+        ClayMan(const uint32_t initialWidth, const uint32_t initialHeight):windowWidth(initialWidth), windowHeight(initialHeight){
+            if(windowWidth == 0){windowWidth = 1;}
+            if(windowHeight == 0){windowHeight = 1;}
         }
 
         //Deconstructor
@@ -76,8 +79,8 @@ class ClayMan {
 
         //Takes mouse, window, and time information and passes it to Clay context
         void updateClayState(
-            const int initialWidth, 
-            const int initialHeight, 
+            const uint32_t initialWidth, 
+            const uint32_t initialHeight, 
             const float mouseX, 
             const float mouseY, 
             const float scrollDeltaX, 
@@ -87,6 +90,8 @@ class ClayMan {
         ){
             windowWidth = initialWidth;
             windowHeight = initialHeight;
+            if(windowWidth == 0){windowWidth = 1;}
+            if(windowHeight == 0){windowHeight = 1;}
             Clay_SetLayoutDimensions((Clay_Dimensions) {
                     .width = (float)windowWidth,
                     .height = (float)windowHeight
@@ -104,7 +109,22 @@ class ClayMan {
             );
         }
 
-        //Call this only once per frame, wraps user callback between Clay_BeginLayout() and CLay_EndLayout(). If you do not want to use this, you will need to call beginLayout() and endLayout() instead of Clay_BeginLayout() and Clay_EndLayout(), or else the string arena will not work correctly.
+        //Be sure to call this instead of Clay_BeginLayout directly to reset string arena index
+        void beginLayout(){
+            resetStringArenaIndex();
+            Clay_BeginLayout();
+        }
+
+        //Same as Clay_EndLayout
+        Clay_RenderCommandArray endLayout(){
+            return Clay_EndLayout();
+        }
+
+        /*
+            Call this only once per frame, wraps user callback between Clay_BeginLayout() and CLay_EndLayout(). 
+            If you do not want to use this, you will need to call beginLayout() and endLayout() instead of Clay_BeginLayout() and Clay_EndLayout(), 
+            or else the string arena will not work correctly. Also, not using this function will bypass the auto-close feature and your program may crash if you forget.
+        */
         Clay_RenderCommandArray buildLayout(void (*userLayoutFunction)()){
             auto start = std::chrono::high_resolution_clock::now();
             countFrames();
@@ -405,6 +425,7 @@ class ClayMan {
             return framecount;
         }
 
+    ////////////////////////////////////////////////////////////private//////////////////////////////////////////////////////////////
     private:
         //One-shot for console warning
         bool warnedAboutClose = false;
@@ -412,8 +433,8 @@ class ClayMan {
         //One-shot for console warning
         bool warnedAboutUnderflow = false;
 
-        int windowWidth;
-        int windowHeight;
+        uint32_t windowWidth;
+        uint32_t windowHeight;
         uint32_t framecount = 0;
         static constexpr size_t maxStringArenaSize = 100000; 
 
@@ -425,17 +446,6 @@ class ClayMan {
 
         //Tracks the heiarchy depth of the current element in the layout
         uint32_t openElementCount = 0;
-
-        //Be sure to call this instead of Clay_BeginLayout directly to reset string arena index
-        void beginLayout(){
-            resetStringArenaIndex();
-            Clay_BeginLayout();
-        }
-
-        //Same as Clay_EndLayout
-        Clay_RenderCommandArray endLayout(){
-            return Clay_EndLayout();
-        }
         
         //Catches and executes child lambda from element()
         void handleElementParam(std::function<void()> childElements = nullptr){
