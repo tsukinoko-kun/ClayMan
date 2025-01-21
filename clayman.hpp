@@ -12,10 +12,12 @@
 #include <optional>
 #include <functional>
 
-
-
 /*
-The original Clay library license can be found here: https://github.com/nicbarker/clay/blob/main/LICENSE.md
+
+ClayMan Repo: https://github.com/TimothyHoytBSME/ClayMan
+Clay Repo: https://github.com/nicbarker/clay
+
+The original Clay library and license can be found here: https://github.com/nicbarker/clay/blob/main/LICENSE.md
 
 In similar fashion, the ClayMan license is as follows:
 
