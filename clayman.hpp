@@ -12,10 +12,41 @@
 #include <optional>
 #include <functional>
 
+
+
+/*
+The original Clay library license can be found here: https://github.com/nicbarker/clay/blob/main/LICENSE.md
+
+In similar fashion, the ClayMan license is as follows:
+
+zlib/libpng license
+
+Copyright (c) 2025 Tim Hoyt
+
+This software is provided 'as-is', without any express or implied warranty.
+In no event will the authors be held liable for any damages arising from the
+use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+    1. The origin of this software must not be misrepresented; you must not
+    claim that you wrote the original software. If you use this software in a
+    product, an acknowledgment in the product documentation would be
+    appreciated but is not required.
+
+    2. Altered source versions must be plainly marked as such, and must not
+    be misrepresented as being the original software.
+
+    3. This notice may not be removed or altered from any source
+    distribution.
+*/
+
 //This class initializes Clay.h layout library, manages it's context, and provides functions for convenience
 class ClayMan {
     public:
-        //Constructor
+        //This constructor initializes clay automatically. It creates the Clay_Arena and uses a default Clay_ErrorHandler.
         ClayMan(
             const int initialWidth, 
             const int initialHeight, 
@@ -31,6 +62,11 @@ class ClayMan {
             }, (Clay_ErrorHandler) handleErrors);
 
             Clay_SetMeasureTextFunction(measureTextFunction, {0});
+        }
+
+        //This constructor only creates the ClayMan object, you will need to create a Clay_Arena and call Clay_Initialize and Clay_SetMeasureTextFunction before using ClayMan functions
+        ClayMan(const int initialWidth, const int initialHeight):windowWidth(initialWidth), windowHeight(initialHeight){
+
         }
 
         //Deconstructor
@@ -66,7 +102,7 @@ class ClayMan {
             );
         }
 
-        //Call this only once per frame, wraps user callback between Clay_BeginLayout() and CLay_EndLayout().
+        //Call this only once per frame, wraps user callback between Clay_BeginLayout() and CLay_EndLayout(). If you do not want to use this, you will need to call beginLayout() and endLayout() instead of Clay_BeginLayout() and Clay_EndLayout(), or else the string arena will not work correctly.
         Clay_RenderCommandArray buildLayout(void (*userLayoutFunction)()){
             auto start = std::chrono::high_resolution_clock::now();
             countFrames();
