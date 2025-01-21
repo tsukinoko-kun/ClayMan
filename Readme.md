@@ -1,6 +1,6 @@
 # ClayMan
 
-### ClayMan is a C++ wrapper library for the `clay.h` library found [here](https://github.com/nicbarker/clay/). This library (as well as Clay), is a work in progress, but is ready to be used.
+### [ClayMan](https://github.com/TimothyHoytBSME/ClayMan) is a C++ wrapper library for the `clay.h` library found [here](https://github.com/nicbarker/clay/). This library (as well as Clay), is a work in progress, but is ready to be used.
 
 ## About Clay
 If you are not already familiar with `Clay`, a high-performance UI layout library in C, [go check it out](https://github.com/nicbarker/clay/)!
