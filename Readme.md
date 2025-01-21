@@ -1,6 +1,6 @@
 # ClayMan
 
-### ClayMan is a C++ wrapper library for the `clayMan.c` library found [here](https://github.com/nicbarker/clay/). This library (as well as Clay), is a work in progress, but is ready to be used.
+### ClayMan is a C++ wrapper library for the `clay.h` library found [here](https://github.com/nicbarker/clay/). This library (as well as Clay), is a work in progress, but is ready to be used.
 
 ## About Clay
 If you are not already familiar with `Clay`, a high-performance UI layout library in C, [go check it out](https://github.com/nicbarker/clay/)!
@@ -36,7 +36,7 @@ While this is an innovative and clever way to do things, you may find yourself w
 - Manages Clay_Strings to allow for std::string usage.
 - Provides handy utility functions for configuration parameters.
 - Allows to still use classic Clay layout macros.
-- Holds closely to Clay's original API.
+- Holds closely to Clay's original macro API.
 - Provides several flexible ways to create your layout:
 
 Pass params and child-lambda:
@@ -166,7 +166,7 @@ ClayMan.openElementWithParams(
 ```
 
 ## How to use ClayMan (with Raylib renderer)
-To use this library in your project, simply copy the `clayman.hpp` header, as well as the `include` folder (which has the compatible version of `clayMan.h` as well as the Raylib renderer) into your working directory. Then, in your project:
+To use this library in your project, simply copy the `clayman.hpp` header, as well as the `include` folder (which has the compatible version of `clay.h` as well as the Raylib renderer) into your working directory. Then, in your project:
 
 ```cpp
 #include "clayman.hpp"
