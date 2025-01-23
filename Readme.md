@@ -2,6 +2,20 @@
 
 ### [ClayMan](https://github.com/TimothyHoytBSME/ClayMan) is a C++ wrapper library for the `clay.h` library found [here](https://github.com/nicbarker/clay/). This library (as well as Clay), is a work in progress, but is ready to be used.
 
+- [About Clay](#about-clay)
+- [About ClayMan](#about-clayman)
+- [Closing Elements](#closing-elements)
+- [Strings](#strings)
+- [How to use ClayMan (with Raylib renderer)](#how-to-use-clayman-with-raylib-renderer)
+- [Events](#events)
+- [Element Parameters](#element-parameters)
+- [Advanced Use](#advanced-use)
+- [API](#api)
+- [Final Notes](#final-notes)
+- [Change Log](#change-log)
+
+
+
 ## About Clay
 If you are not already familiar with `Clay`, a high-performance UI layout library in C, [go check it out](https://github.com/nicbarker/clay/)!
 The Clay library is a masterclass in high-performance low-level layout management that handles your UI calculations in real time in immediate mode with blazing speeds.
@@ -287,19 +301,74 @@ Other events will need to be handled/created with other means, and are not cover
 
 In Clay, the `CLAY` macro takes configurations and/or ID macros as parameters. Configurations such as layout, rectangle, scroll, floating, and border configs are passed into macros like `CLAY_LAYOUT` or `CLAY_RECTANGLE` accordingly; then, in-turn, into CLAYMan. In ClayMan, those parameters are either passed directly into `element` or `openElementWithParams` (without needing to call `endConfig`), or they are passed to individual functions like `applyLayoutConfig` or `applyRectangleConfig` between the calls of `openElement` and `endConfig`. The parameters can be in any order, and are optional. For the `element` or `openElementWithParams` functions, you must cast the configurations to each type (i.e. Clay_LayoutConfig), but if applying the configs directly, you do not.
 
-The `CLAY_TEXT` macro usually takes it's own configuration and is an isolated element without children. ClayMan captures this as its own function, `textElement`. See Strings section for an example.
+The `CLAY_TEXT` macro usually takes it's own configuration and is an isolated element without children. ClayMan captures this as its own function, `textElement`. See [Strings](#strings) section for an example.
 
 
 ## Advanced Use
 If you want to set up a `Clay_Arena`, `Clay_ErrorHandler`, and/or text-measure function yourself, you will need to call `Clay_Initialize` and `Clay_SetMeasureTextFunctionuse` before using any ClayMan functions. You will also need to use the `ClayMan` constructor without the text_measure function:
 ```cpp
-/*Example coming soon*/
+//Initialize ClayMan using alternate Constructor
+ClayMan clayMan(1024, 786);
+
+//Define Clay_ErrorHandler handler
+void handleErrors(Clay_ErrorData errorData) {
+    printf("%s", errorData.errorText.chars);
+}
+
+//Application entry
+int main(void) {
+    
+    //Manually set up Clay_Arena
+    uint64_t clayRequiredMemory = Clay_MinMemorySize();
+    Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(clayRequiredMemory, malloc(clayRequiredMemory));
+
+    //Manually initialize Clay
+    Clay_Initialize(clayMemory, (Clay_Dimensions) {
+    .width = (float)clayMan.getWindowWidth(),
+    .height = (float)clayMan.getWindowHeight()
+    }, (Clay_ErrorHandler) handleErrors);
+
+    //Manually set text measure function
+    Clay_SetMeasureTextFunction(Raylib_MeasureText, {0});
+
+    /*Renderer setup, layout building, and rendering go here*/
+    return 0;
+}
 ```
 
 If you do not want to use a layout callback by calling `buildLayout`, then you will need to use `beginLayout` and `endLayout` instead of calling `Clay_BeginLayout` and `Clay_EndLayout` yourself.
 Otherwise the ClayMan string arena will not reset properly each frame. Also, the auto-close feature will not be used, and if you forget a `closeElement` call, the program will crash.
 ```cpp
-/*Example coming soon*/
+
+//Inside your render loop:
+
+//Manually begin layout
+Clay_BeginLayout();
+
+//Build your immediate-mode layout here (or create a function for it)
+Clay_TextElementConfig textConfig = {
+    .textColor = {255, 255, 255, 255},
+    .fontId = 0,
+    .fontSize = 20
+};
+
+clayMan.element(
+    "Container",
+    (Clay_LayoutConfig){ 
+        .sizing = clayMan.expandXY(),
+        .childAlignment = {.x = CLAY_ALIGN_X_CENTER, .y = CLAY_ALIGN_Y_CENTER}
+    },
+    (Clay_RectangleElementConfig){ 
+        Clay_Color{120, 120, 120, 255}
+    },
+    [&]{
+        clayMan.textElement("This is an advanced use example!", textConfig);
+    }
+);
+
+//Manually call Clay_EndLayout() to get render commands and pass to renderer
+Clay_RenderCommandArray renderCommands = Clay_EndLayout();
+Clay_Raylib_Render(renderCommands); 
 ```
 
 ## API
@@ -488,7 +557,7 @@ The following are convenience functions for creating Clay_ChildAlignment instanc
     - Params: None.
     - Returns: **Clay_ChildAlignment**, a layout sub-configuration
 
-## Utility
+### Utility
 The following functions are utility functions for convenience.
 - `mousePressed`
     - Purpose: Checks if left mouse button was pressed this frame.
@@ -517,9 +586,11 @@ The following functions are utility functions for convenience.
 
 ## Final Notes
 
-Since this library is just a wrapper for Clay; any original clay structs, macros, or functions can still be called. However, there is no need to initialize Clay or create a Clay_Arena of your own. Furthermore, doing so could cause issues or lead to unforseen behavior. Do keep in mind, this library (and Clay), are in developement, and anything could change. The version of clay provided in this repo (and renderer), are guaranteed to be compatible, and will be updated accordingly. Any future updates to this library will be posted in the Change Log section. Happy Coding!
+Since this library is just a wrapper for Clay; any original clay structs, macros, or functions can still be called. However, there is no need to initialize Clay or create a Clay_Arena of your own. Furthermore, doing so without using the alternate Constructor could cause issues or lead to unforseen behavior, see [Advanced Use](#advanced-use). Do keep in mind, this library (and Clay), are in developement, and anything could change. The version of clay provided in this repo (and renderer), are guaranteed to be compatible, and will be updated accordingly. Any future updates to this library will be posted in the Change Log section. This wrapper does not expose all of the Clay API, but most of it can still be manually used without issue if you know what you are doing. If you have any requests or issues, I am open to all. Happy Coding!
 
 ## Change Log
 
 - January 21, 2025
     - ClayMan was published.
+- January 23, 2025
+    - Added example for advanced use.

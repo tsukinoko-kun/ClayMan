@@ -27,3 +27,14 @@ add_custom_command(
     ${EXAMPLES_DIR}/quick-example/resources
     $<TARGET_FILE_DIR:quick-example>/resources
 )
+
+add_executable(advanced-use-example ${EXAMPLES_DIR}/advanced-use-example/advanced-use-example.cpp)
+set_target_properties(advanced-use-example PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${EXAMPLES_OUTPUT_DIR}/advanced-use-example)
+target_link_libraries(advanced-use-example raylib)
+
+add_custom_command(
+    TARGET advanced-use-example POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${EXAMPLES_DIR}/advanced-use-example/resources
+    $<TARGET_FILE_DIR:advanced-use-example>/resources
+)
