@@ -64,10 +64,9 @@ int main(void) {
         BeginDrawing(); //Rayblib native command
         ClearBackground(BLACK); //Rayblib native command
 
-        //You can still use the ClayMan.buildLayout(yourCallback) function here, or you can manually call Clay_BeginLayout() and Clay_EndLayout()
-        //This method currently will not automatically close elements to prevent crashes if you use openElementWithParams() or openElement() methods.
-        //The element() method still automatically closes the element.
-        Clay_BeginLayout();
+        //You can still use the ClayMan.buildLayout(yourCallback) function here, or you can manually call beginLayout() and endLayout()
+        //endLayout() will still automatically close elements to prevent crashes if you use openElementWithParams() or openElement() methods.
+        clayMan.beginLayout();
 
         //Build your immediate-mode layout here (or create a function for it)
         Clay_TextElementConfig textConfig = {
@@ -91,7 +90,7 @@ int main(void) {
         );
 
         //Manually call Clay_EndLayout() to get render commands and pass to renderer
-        Clay_RenderCommandArray renderCommands = Clay_EndLayout();
+        Clay_RenderCommandArray renderCommands = clayMan.endLayout();
         Clay_Raylib_Render(renderCommands); 
 
         EndDrawing(); //Rayblib native command

@@ -117,6 +117,7 @@ class ClayMan {
 
         //Same as Clay_EndLayout
         Clay_RenderCommandArray endLayout(){
+            closeAllElements();
             return Clay_EndLayout();
         }
 
@@ -132,13 +133,6 @@ class ClayMan {
 
             userLayoutFunction();
 
-            while(openElementCount > 0){
-                if(!warnedAboutClose){
-                    printf("WARN: An element was not closed.");
-                    warnedAboutClose = true;
-                }
-                closeElement();
-            }
 
             measureTime(start);
             return endLayout();
@@ -520,6 +514,16 @@ class ClayMan {
             }
             stringArena[nextStringArenaIndex++] = ' ';
             return startPtr;
+        }
+
+        void closeAllElements(){
+            while(openElementCount > 0){
+                if(!warnedAboutClose){
+                    printf("WARN: An element was not closed.");
+                    warnedAboutClose = true;
+                }
+                closeElement();
+            }
         }
 
         /////////for performance measuring/////////

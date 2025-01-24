@@ -139,7 +139,7 @@ ClayMan.openElementWithParams(
 ```
 
 ## Closing Elements
-If using the classic Clay macros or using ClayMan's `element` function, closing of elements is automatic. The main catch with `openElement` and `openElementWithParams` is that you must close each element manually. This can be a bit tricky to keep track of when deeply nesting child elements. The ClayMan class does automatically close any forgotten elements to prevent crashes, but it may not close them where you need them closed. One good way to make things easier is to isolate all child elements in a block and close afterward:
+If using the classic Clay macros or using ClayMan's `element` function, closing of elements is automatic. The main catch with `openElement` and `openElementWithParams` is that you must close each element manually by calling `closeElement`. This can be a bit tricky to keep track of when deeply nesting child elements. The ClayMan class does automatically close any forgotten elements to prevent crashes, but it may not close them where you need them closed. One good way to make things easier is to isolate all child elements in a block and close afterward:
 
 ```cpp
 ClayMan.openElementWithParams(
@@ -337,13 +337,13 @@ int main(void) {
 ```
 
 If you do not want to use a layout callback by calling `buildLayout`, then you will need to use `beginLayout` and `endLayout` instead of calling `Clay_BeginLayout` and `Clay_EndLayout` yourself.
-Otherwise the ClayMan string arena will not reset properly each frame. Also, the auto-close feature will not be used, and if you forget a `closeElement` call, the program will crash.
+Otherwise, the ClayMan string arena will not reset properly each frame. This also still enables the auto-close feature.
 ```cpp
 
 //Inside your render loop:
 
-//Manually begin layout
-Clay_BeginLayout();
+//Manually call beginLayout
+clayMan.beginLayout();
 
 //Build your immediate-mode layout here (or create a function for it)
 Clay_TextElementConfig textConfig = {
@@ -366,8 +366,8 @@ clayMan.element(
     }
 );
 
-//Manually call Clay_EndLayout() to get render commands and pass to renderer
-Clay_RenderCommandArray renderCommands = Clay_EndLayout();
+//Manually call endLayout() to get render commands and pass to renderer
+Clay_RenderCommandArray renderCommands = clayMan.endLayout();
 Clay_Raylib_Render(renderCommands); 
 ```
 
@@ -594,3 +594,5 @@ Since this library is just a wrapper for Clay; any original clay structs, macros
     - ClayMan was published.
 - January 23, 2025
     - Added example for advanced use.
+- January 24, 2025
+    - Updated adnaved use example to use beginLayout and endLayout, so aut-close still works.
