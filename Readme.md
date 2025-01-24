@@ -384,7 +384,7 @@ The `ClayMan` class has the following public functions:
         - **Clay_Dimensions (*measureTextFunction)(Clay_String *text, Clay_TextElementConfig *config)**, the renderer's text measuring function.
     - Returns: **ClayMan** instance.
 - `ClayMan`
-    - Purpose: This constructor only creates the ClayMan object, you will need to create a `Clay_Arena` and call `Clay_Initialize` and `Clay_SetMeasureTextFunction` before using ClayMan functions.
+    - Purpose: This constructor only creates the ClayMan object, you will need to create a `Clay_Arena` and call `Clay_Initialize` and `Clay_SetMeasureTextFunction` before using ClayMan functions. See [Advanced Use](#advanced-use).
     - Params:
         - uint32_t **windowWidth**, the initial window width.
         - uint32_t **windowHeight**, the initial window height.
@@ -404,8 +404,16 @@ The following functions are the primary calls to operate the ClayMan instance, a
         - bool **leftButtonDown**, the current state of the left mouse button.
     - Returns: None.
 - `buildLayout`
-    - Purpose: Wraps the user layout callback between `beginLayout` and `endLayout` and calls them in order. It also tracks and auto-closes elements to prevent crashes. Call this once per frame, before rendering.
+    - Purpose: Wraps the user layout callback between `beginLayout` and `endLayout` and calls them in order. Call this once per frame, before rendering.
     - Params: **void (*userLayoutFunction)()**, the user's callback function for their layout.
+    - Returns: **Clay_RenderCommandArray** instance, to be used by renderer.
+- `beginLayout`
+    - Purpose: Sets the start of layout building. Resets string arena then calls `Clay_BeginLayout`. Only use this if NOT using `buildLayout`. See [Advanced Use](#advanced-use).
+    - Params: None.
+    - Returns: None.
+- `endLayout`
+    - Purpose: Finalizes the layout, handles auto-closing of elements, and calls `Clay_EndLayout`. Only use this if NOT using `buildLayout`. See [Advanced Use](#advanced-use).
+    - Params: None.
     - Returns: **Clay_RenderCommandArray** instance, to be used by renderer.
 
 ### Elements
