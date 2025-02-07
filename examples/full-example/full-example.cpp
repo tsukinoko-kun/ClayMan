@@ -245,7 +245,7 @@ struct Popup{
                     .id = clayMan.hashID("Popup"),
                     .layout = {.sizing = clayMan.fixedSize(popupWidth, popupHeight), .layoutDirection = CLAY_TOP_TO_BOTTOM},
                     .backgroundColor = appData.colors.gray_dark2, 
-                    .cornerRadius = 8,
+                    .cornerRadius = {8,8,8,8},
                     .floating = {
                         .parentId = clayMan.getClayElementId("OuterContainer").id,
                         .attachPoints = {.element = CLAY_ATTACH_POINT_CENTER_CENTER, .parent = CLAY_ATTACH_POINT_CENTER_CENTER},

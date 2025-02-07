@@ -106,9 +106,10 @@ void myLayout(ClayMan& clayMan){
                     .childAlignment = clayMan.centerXY()
                 },
                 .backgroundColor = {0,0,0,125},
+                .cornerRadius = {8,8,8,8},
                 .border = {
-                    .color = {123,123,0,123},
-                    .width = 5
+                    .color = {123,123,0,255},
+                    .width = {5,5,5,5,0}
                 }
             },
             [&]{
