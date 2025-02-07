@@ -48,11 +48,12 @@ freely, subject to the following restrictions:
 //This class initializes Clay.h layout library, manages it's context, and provides functions for convenience
 class ClayMan {
     public:
-        //This constructor initializes clay automatically. It creates the Clay_Arena and uses a default Clay_ErrorHandler.
+        //This constructor initializes clay automatically. It creates the Clay_Arena and uses a default Clay_ErrorHandler. You will need to pass in your renderer's measure text function, as well as the associated userdata (i.e. fonts array for raylib).
         ClayMan(
             const uint32_t initialWidth, 
             const uint32_t initialHeight, 
-            Clay_Dimensions (*measureTextFunction)(Clay_StringSlice text, Clay_TextElementConfig *config, uintptr_t userData)
+            Clay_Dimensions (*measureTextFunction)(Clay_StringSlice text, Clay_TextElementConfig *config, void* userData),
+            void* measureTextUserData
         ):windowWidth(initialWidth), windowHeight(initialHeight)
         {
             if(windowWidth == 0){windowWidth = 1;}
@@ -65,7 +66,7 @@ class ClayMan {
             .height = (float)windowHeight
             }, (Clay_ErrorHandler) handleErrors);
 
-            Clay_SetMeasureTextFunction(measureTextFunction, {0});
+            Clay_SetMeasureTextFunction(measureTextFunction, measureTextUserData);
         }
 
         //This constructor only creates the ClayMan object, you will need to create a Clay_Arena and call Clay_Initialize and Clay_SetMeasureTextFunction before using ClayMan functions
@@ -109,64 +110,51 @@ class ClayMan {
             );
         }
 
-        //Be sure to call this instead of Clay_BeginLayout directly to reset string arena index
+        //If not using buildLayout(), call this instead of Clay_BeginLayout directly each frame before creating elements to reset string arena index
         void beginLayout(){
+            start = std::chrono::high_resolution_clock::now();
+            countFrames();
             resetStringArenaIndex();
             Clay_BeginLayout();
         }
 
-        //Same as Clay_EndLayout
+        //If not using buildLayout(), call this instead of Clay_EndLayout directly each frame after creating elements to handle automatic element closures for preventing crashes.
         Clay_RenderCommandArray endLayout(){
             closeAllElements();
+            measureTime();
             return Clay_EndLayout();
         }
-
-        /*
-            Call this only once per frame, wraps user callback between Clay_BeginLayout() and CLay_EndLayout(). 
-            If you do not want to use this, you will need to call beginLayout() and endLayout() instead of Clay_BeginLayout() and Clay_EndLayout(), 
-            or else the string arena will not work correctly. Also, not using this function will bypass the auto-close feature and your program may crash if you forget.
-        */
-        Clay_RenderCommandArray buildLayout(void (*userLayoutFunction)()){
-            auto start = std::chrono::high_resolution_clock::now();
-            countFrames();
-            beginLayout();
-
-            userLayoutFunction();
-
-
-            measureTime(start);
-            return endLayout();
-        }
-
-        //Takes ID string or literal, as well as layout, rectangle, scroll, floating, border, or image configs, and also a lambda function for child elements. Opens and configures an element, calls child lambda, then closes the element; all automatically.
-        template<typename... Args>
-        void element(Args... args) {
+        
+        //Creates an element in-place. Automatically opens, applies configs, calls all child elements, and closes.
+        void element(Clay_ElementDeclaration configs, std::function<void()> childLambda = nullptr) {
             openElement();
-
-            bool childcallbackfound = false;
-            (checkForChildCallback(childcallbackfound, args), ...);
-
-            if(!childcallbackfound){
-                endConfig();
+            applyElementConfigs(configs);
+            childLambda();
+            closeElement();           
+        }
+        
+        //Creates an element in-place. Automatically opens, applies default configs, calls all child elements, and closes.
+        void element(std::function<void()> childLambda = nullptr) {
+            openElement();
+            if(childLambda != nullptr){
+                childLambda();
             }
             closeElement();           
         }
 
-        //Takes ID string or literal, as well as layout, rectangle, scroll, floating, border, or image configs. Opens and configures an element automatically. Must be closed manually with closeElement().
-        template<typename... Args>
-        void openElementWithParams(Args... args){
+        //Manually opens an element with configurations, call closeElement() after children (if any) to close.
+        void openElement(Clay_ElementDeclaration configs){
             openElement();
-            (handleElementParam(args), ...);
-            endConfig();
+            applyElementConfigs(configs);
         }
 
-        //Manually opens an element. Call endConfigs() after manually apply configurations, then manually close with closeElement()
+        //Manually opens an element with default configurations, call closeElement() after children (if any) to close.
         void openElement(){
             Clay__OpenElement();
             openElementCount++;
         }
 
-        //Manually closes an element. Call after the children of an element (if any) that was opened manually with openElement() or openElementWithParams()
+        //Manually closes an element. Call after the children of an element (if any) that was opened manually with openElement()
         void closeElement(){
             Clay__CloseElement();
             if(openElementCount <=0){
@@ -177,11 +165,6 @@ class ClayMan {
             }else{
                 openElementCount--;
             }
-        }
-
-        //Manually end configuration region of an element that was opened with openElement().
-        void endConfig(){
-            Clay__ElementPostConfiguration();
         }
 
         //A self-contained text element, with no children.
@@ -215,75 +198,8 @@ class ClayMan {
                 )
             );
         }
-         
-        //Call to manually apply an ID after calling openElement(). Takes a string literal.
-        template<size_t N>
-        void applyID(const char(&id)[N]) {
-            Clay__AttachId(Clay__HashString(toClayString(id), 0, 0));
-        }
 
-        //Call to manually apply an ID after calling openElement().
-        void applyID(const std::string& id) {
-            Clay__AttachId(Clay__HashString(toClayString(id), 0, 0));
-        }
-
-        //Call to manually apply an ID after calling openElement().
-        void applyID(const Clay_String& id) {
-            Clay__AttachId(Clay__HashString(id, 0, 0));
-        }
-        
-        //Call to manually apply layout config after calling openElement()
-        void applyLayoutConfig(const Clay_LayoutConfig layoutConfig){
-            Clay__AttachLayoutConfig(Clay__StoreLayoutConfig((Clay__Clay_LayoutConfigWrapper(layoutConfig)).wrapped));
-        }
-
-        //Call to manually apply rectangle config after calling openElement()
-        void applyRectangleConfig(const Clay_RectangleElementConfig rectangleConfig){
-            Clay__AttachElementConfig(
-                Clay_ElementConfigUnion { 
-                    .rectangleElementConfig = Clay__StoreRectangleElementConfig(
-                        (Clay__Clay_RectangleElementConfigWrapper (rectangleConfig)).wrapped
-                    ) 
-                }, 
-                CLAY__ELEMENT_CONFIG_TYPE_RECTANGLE
-            );
-        }
-
-        //Call to manually apply scroll config after calling openElement()
-        void applyScrollConfig(const Clay_ScrollElementConfig scrollConfig){
-                Clay__AttachElementConfig(Clay_ElementConfigUnion { .scrollElementConfig = Clay__StoreScrollElementConfig((Clay__Clay_ScrollElementConfigWrapper { scrollConfig }).wrapped) }, CLAY__ELEMENT_CONFIG_TYPE_SCROLL_CONTAINER);
-        }
-
-        //Call to manually apply floating config after calling openElement()
-        void applyFloatingConfig(const Clay_FloatingElementConfig floatingConfig){
-            Clay__AttachElementConfig(Clay_ElementConfigUnion { .floatingElementConfig = Clay__StoreFloatingElementConfig((Clay__Clay_FloatingElementConfigWrapper { floatingConfig }).wrapped) }, CLAY__ELEMENT_CONFIG_TYPE_FLOATING_CONTAINER);
-        }
-
-        //Call to manually apply border config after calling openElement()
-        void applyBorderConfig(const Clay_BorderElementConfig borderConfig){
-            Clay__AttachElementConfig(
-                Clay_ElementConfigUnion { 
-                    .borderElementConfig = Clay__StoreBorderElementConfig(
-                        (Clay__Clay_BorderElementConfigWrapper (borderConfig)).wrapped
-                    )
-                }, 
-            CLAY__ELEMENT_CONFIG_TYPE_BORDER_CONTAINER
-            );
-        }
-
-        //Call to manually apply image config after calling openElement()
-        void applyImageConfig(Clay_ImageElementConfig imageConfig){
-            Clay__AttachElementConfig(
-                Clay_ElementConfigUnion { 
-                    .imageElementConfig = Clay__StoreImageElementConfig(
-                        (Clay__Clay_ImageElementConfigWrapper {imageConfig}).wrapped
-                    ) 
-                }, 
-                CLAY__ELEMENT_CONFIG_TYPE_IMAGE
-            );
-        }
-
-        //Convenience funtion for .sizing layout parameter
+        //Convenience function for .sizing layout parameter
         Clay_Sizing fixedSize(const uint32_t w, const uint32_t h) {
             return{
                 .width = (Clay_SizingAxis { .size = { .minMax = { (float)w, (float)w } }, .type = CLAY__SIZING_TYPE_FIXED }),
@@ -291,7 +207,7 @@ class ClayMan {
             };
         }
 
-        //Convenience funtion for .sizing layout parameter
+        //Convenience function for .sizing layout parameter
         Clay_Sizing expandXY(){
             return {
                 .width = (Clay_SizingAxis { .size = { .minMax = { {0} } }, .type = CLAY__SIZING_TYPE_GROW }),
@@ -299,21 +215,21 @@ class ClayMan {
             };
         }
 
-        //Convenience funtion for .sizing layout parameter
+        //Convenience function for .sizing layout parameter
         Clay_Sizing expandX(){
             return {
                 .width = (Clay_SizingAxis { .size = { .minMax = { {0} } }, .type = CLAY__SIZING_TYPE_GROW }),
             };
         }
 
-        //Convenience funtion for .sizing layout parameter
+        //Convenience function for .sizing layout parameter
         Clay_Sizing expandY(){
             return {
                 .height = (Clay_SizingAxis { .size = { .minMax = { {0} } }, .type = CLAY__SIZING_TYPE_GROW }),
             };
         }
 
-        //Convenience funtion for .sizing layout parameter
+        //Convenience function for .sizing layout parameter
         Clay_Sizing expandXfixedY(const uint32_t h){
             return {
                 .width = (Clay_SizingAxis { .size = { .minMax = { {0} } }, .type = CLAY__SIZING_TYPE_GROW }),
@@ -321,7 +237,7 @@ class ClayMan {
             };
         }
 
-        //Convenience funtion for .sizing layout parameter
+        //Convenience function for .sizing layout parameter
         Clay_Sizing expandYfixedX(const uint32_t w){
             return {
                 .width = (Clay_SizingAxis { .size = { .minMax = { (float)w, (float)w } }, .type = CLAY__SIZING_TYPE_FIXED }),
@@ -329,49 +245,59 @@ class ClayMan {
             };
         }
 
-        //Convenience funtion for .padding layout parameter
+        //Convenience function for .padding layout parameter
         Clay_Padding padAll(const uint16_t p){
             return {p, p, p, p};
         }
        
-        //Convenience funtion for .padding layout parameter
+        //Convenience function for .padding layout parameter
         Clay_Padding padX(const uint16_t p){
             return {p, p, 0, 0};
         }
 
-        //Convenience funtion for .padding layout parameter
+        //Convenience function for .padding layout parameter
         Clay_Padding padY(const uint16_t p){
             return {0, 0, p, p};
         }
         
-        //Convenience funtion for .padding layout parameter
+        //Convenience function for .padding layout parameter
         Clay_Padding padXY(const uint16_t px, const uint16_t py){
             return {px, px, py, py};
         }
 
-        //Convenience funtion for .padding layout parameter
+        //Convenience function for .padding layout parameter
         Clay_Padding padLeft(const uint16_t pl){
             return {pl, 0, 0, 0};
         }
 
-        //Convenience funtion for .padding layout parameter
+        //Convenience function for .padding layout parameter
         Clay_Padding padRight(const uint16_t pr){
             return {0, pr, 0, 0};
         }
 
-        //Convenience funtion for .padding layout parameter
+        //Convenience function for .padding layout parameter
         Clay_Padding padTop(const uint16_t pt){
             return {0, 0, pt, 0};
         }
 
-        //Convenience funtion for .padding layout parameter
+        //Convenience function for .padding layout parameter
         Clay_Padding padBottom(const uint16_t pb){
             return {0, 0, 0, pb};
         }
 
-        //Convenience funtion for .childAlignment layout parameter
+        //Convenience function for .childAlignment layout parameter
         Clay_ChildAlignment centerXY(){
             return {.x = CLAY_ALIGN_X_CENTER, .y = CLAY_ALIGN_Y_CENTER};
+        }
+
+        //Hashes string literal into a clay ID
+        Clay_ElementId hashID(const Clay_String& id){
+            return Clay__HashString(id, 0, 0);
+        }
+
+        //Hashes string into a clay ID
+        Clay_ElementId hashID(const std::string& id){
+            return Clay__HashString(toClayString(id), 0, 0);
         }
 
         //Gets clay internal left-mouse-button state this frame
@@ -380,17 +306,29 @@ class ClayMan {
         }
 
         bool pointerOver(const Clay_String id){
-            return Clay_PointerOver(Clay_GetElementId(id));
+            return Clay_PointerOver(getClayElementId(id));
         }
 
         bool pointerOver(const std::string& id){
-            return Clay_PointerOver(Clay_GetElementId(toClayString(id)));
+            return Clay_PointerOver(getClayElementId(toClayString(id)));
         }
 
-        //Takes string literal
         template<size_t N>
         bool pointerOver(const char(&id)[N]){
-            return Clay_PointerOver(Clay_GetElementId(toClayString(id)));
+            return Clay_PointerOver(getClayElementId(toClayString(id)));
+        }
+
+        Clay_ElementId getClayElementId(const Clay_String id){
+            return Clay_GetElementId(id);
+        }
+
+        Clay_ElementId getClayElementId(const std::string& id){
+            return Clay_GetElementId(toClayString(id));
+        }
+
+        template<size_t N>
+        Clay_ElementId getClayElementId(const char(&id)[N]){
+            return Clay_GetElementId(toClayString(id));
         }
 
         //Caches std::string into a string arena, then creates and returns a Clay_String
@@ -430,6 +368,8 @@ class ClayMan {
         uint32_t windowWidth;
         uint32_t windowHeight;
         uint32_t framecount = 0;
+        std::chrono::_V2::system_clock::time_point start = std::chrono::high_resolution_clock::now();
+
         static constexpr size_t maxStringArenaSize = 100000; 
 
         //Reusable char arena to cache strings for Clay_String conversions
@@ -441,58 +381,6 @@ class ClayMan {
         //Tracks the heiarchy depth of the current element in the layout
         uint32_t openElementCount = 0;
         
-        //Catches and executes child lambda from element()
-        void handleElementParam(std::function<void()> childElements = nullptr){
-            if (childElements) {
-                childElements();
-            }
-        }
-
-        //Catches and applies std::string ID from element() and openElementWithParams()
-        void handleElementParam(const std::string param){
-            Clay__AttachId(Clay__HashString(toClayString(param), 0, 0));
-        }
-
-        //Catches and applies string literal ID from element() and openElementWithParams()
-        template <size_t N>
-        void handleElementParam(const char (&param)[N]) {
-                Clay__AttachId(Clay__HashString(toClayString(param), 0, 0));
-        } 
-
-        //Catches and applies Clay_String ID from element() and openElementWithParams()
-        void handleElementParam(const Clay_String param) {
-                Clay__AttachId(Clay__HashString(param, 0, 0));
-        } 
-
-        //Catches and applies layout config from element() and openElementWithParams()
-        void handleElementParam(const Clay_LayoutConfig& config) {
-            applyLayoutConfig(config);
-        }
-
-        //Catches and applies rectangle config from element() and openElementWithParams()
-        void handleElementParam(const Clay_RectangleElementConfig& config) {
-            applyRectangleConfig(config);
-        }
-
-        //Catches and applies floating config from element() and openElementWithParams()
-        void handleElementParam(const Clay_FloatingElementConfig& config) {
-            applyFloatingConfig(config);
-        }
-
-        //Catches and applies scroll config from element() and openElementWithParams()
-        void handleElementParam(const Clay_ScrollElementConfig& config) {
-            applyScrollConfig(config);
-        }
-
-        //Catches and applies border config from element() and openElementWithParams()
-        void handleElementParam(const Clay_BorderElementConfig& config) {
-            applyBorderConfig(config);
-        }
-
-        //Catches and applies image config from element() and openElementWithParams()
-        void handleElementParam(const Clay_ImageElementConfig& config) {
-            applyImageConfig(config);
-        }
         
         //Resets index tracker for string arena to 0
         void resetStringArenaIndex() {
@@ -516,6 +404,10 @@ class ClayMan {
             return startPtr;
         }
 
+        void applyElementConfigs(const Clay_ElementDeclaration& configs){
+            Clay__ConfigureOpenElement((Clay__Clay_ElementDeclarationWrapper {configs}).wrapped);
+        }
+
         void closeAllElements(){
             while(openElementCount > 0){
                 if(!warnedAboutClose){
@@ -524,6 +416,11 @@ class ClayMan {
                 }
                 closeElement();
             }
+        }
+
+        //Clay_ErrorHandler
+        static void handleErrors(Clay_ErrorData errorData) {
+            printf("%s", errorData.errorText.chars);
         }
 
         /////////for performance measuring/////////
@@ -538,7 +435,7 @@ class ClayMan {
             }
         }
 
-        void measureTime(auto start){
+        void measureTime(){
             auto end = std::chrono::high_resolution_clock::now();
             auto elapsed = end - start;
             long long microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
@@ -551,26 +448,6 @@ class ClayMan {
             if(microseconds > maxframetime) {
                 maxframetime = microseconds; 
                 std::cout << "New maximum layout time of " << maxframetime << " microseconds." << std::endl;
-            }
-        }
-
-        //Clay_ErrorHandler
-        static void handleErrors(Clay_ErrorData errorData) {
-            printf("%s", errorData.errorText.chars);
-        }
-
-        //Checks params from element() for children callback lambda
-        template <typename F, typename... Args>
-        void checkForChildCallback(bool& childcallbackfound, F&& f, Args&&... args){
-            if(!childcallbackfound){
-                bool isfunc = std::invocable<F, Args...>;
-                if(isfunc){
-                    childcallbackfound = true;
-                    endConfig();
-                    handleElementParam(f);
-                }else{
-                    handleElementParam(f);
-                }
             }
         }
 };

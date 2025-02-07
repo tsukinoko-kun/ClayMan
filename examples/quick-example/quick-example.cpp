@@ -1,11 +1,10 @@
 #include "../../clayman.hpp"
 #include "../../include/raylib/clay_renderer_raylib.c"
 
-//Initialize ClayMan
-ClayMan clayMan(1024, 786, Raylib_MeasureText);
+
 
 //User layout callback function, do not call Clay_BeginLayout() or Clay_EndLayout()
-void myLayout(){
+void myLayout(ClayMan& clayMan){
     static std::string theText = "Click the button to change the text.";
 
     //A reusable configuration
@@ -20,97 +19,106 @@ void myLayout(){
         theText = "Button has been clicked!";
     }
 
-    //Here we are using openElementWithParams. We do not need to call endConfigs(), but we DO need to call closeElement() after children block
-    clayMan.openElementWithParams(
-        "OuterContainer", 
-        (Clay_LayoutConfig){ 
-            .sizing = clayMan.expandXY(), 
-            .padding = clayMan.padAll(16), 
-            .childGap = 16, 
-            .layoutDirection = CLAY_TOP_TO_BOTTOM 
+    //Here we are using openElement(). We need to call closeElement() after children block
+    clayMan.openElement({
+        .id = clayMan.hashID("OuterContainer"),
+        .layout = {
+            .sizing = clayMan.expandXY(),
+            .padding = clayMan.padAll(16),
+            .childGap = 16,
+            .layoutDirection = CLAY_TOP_TO_BOTTOM,
         },
-        (Clay_RectangleElementConfig){ .color = {50, 50, 50, 255} }
-        //we do not call endConfigs()
-    );{ //Children of OuterContain are in this block. The block is not necessary, but helps with structure.
+        .backgroundColor = {50, 50, 50, 255}
+    });{ //Children of OuterContainer are in this block. The block is not necessary, but helps with structure.
         //Text Elements are self-contained
-        clayMan.textElement("The outer container was made with openElementWithParams function and needs closed manually", textConfig);
+        clayMan.textElement("The outer container was made with openElement function and needs closed manually", textConfig);
 
-        //Here we are using the lambda method, we do not need to call endConfigs or closeElement
+        //Here we are using the lambda method, we do not need to call closeElement()
         clayMan.element(
-            "Button",
-            (Clay_LayoutConfig){ 
-                .sizing = clayMan.fixedSize(100, 40),
-                .childAlignment = {.x = CLAY_ALIGN_X_CENTER, .y = CLAY_ALIGN_Y_CENTER}
-            },
-            (Clay_RectangleElementConfig){ 
-                .color = clayMan.pointerOver("Button")? //ternary in-line config property
+            {
+                .id = clayMan.hashID("Button"),
+                .layout = {
+                    .sizing = clayMan.fixedSize(100, 40),
+                    .childAlignment = {.x = CLAY_ALIGN_X_CENTER, .y = CLAY_ALIGN_Y_CENTER}
+                },
+                .backgroundColor = clayMan.pointerOver("Button")? //ternary in-line config property
                     Clay_Color{120, 120, 120, 255}
-                    : Clay_Color{100, 100, 100, 255} 
+                    : Clay_Color{100, 100, 100, 255}
             },
-            [&]{ //children of "Buton" are in this lambda, the lambda is the last argument of the parent
+            [&]{ //children of "Button" are in this lambda
                 clayMan.textElement("Click Me", textConfig);
             }
-        ); //do not call closeElement for "Button"
+        ); //do not call closeElement() for "Button"
 
         clayMan.textElement(theText, textConfig);
         
-        //Here is a linear method element
-        clayMan.openElement(); //we manually open the element
-        clayMan.applyID("ManualElement"); //we manually apply id and configs
-        clayMan.applyLayoutConfig(
-            { 
-                .padding = clayMan.padXY(26, 16),
-                .childGap = 16,
-                .childAlignment = clayMan.centerXY()
+        //Here is another manual element
+        clayMan.openElement( //we manually open the element
+            {
+                .id = clayMan.hashID("ManualElement"),
+                .layout = {
+                    .padding = clayMan.padXY(26, 16),
+                    .childGap = 16,
+                    .childAlignment = clayMan.centerXY()
+                },
+                .backgroundColor = {0,0,0,255}
             }
-        );
-        clayMan.applyRectangleConfig(
-            {.color = {0, 0, 0, 255}}
-        );
-        clayMan.endConfig(); //we manually close the configuration section
-        {//Children of "ManualElement" are in this block, the block is not necessary, but helps with structure
+        );{//Children of "ManualElement" are in this block, the block is not necessary, but helps with structure
             clayMan.textElement("This parent element was made manually.", textConfig);
 
             //Another lambda element
             clayMan.element(
-                "Lambdaelement",
-                Clay_LayoutConfig{.padding = clayMan.padAll(16)},
-                (Clay_RectangleElementConfig){.color = {120, 120, 120, 255}},
+                {
+                    .id = clayMan.hashID("LambdaElement"),
+                    .layout = {.padding = clayMan.padAll(16)},
+                    .backgroundColor = {120,120,120,255}
+                },
                 [&]{
                     clayMan.textElement("This element was made with the lambda method using element function.", textConfig);
                 }
             );
 
             //A classic macro element
-            CLAY(
-                CLAY_ID("ClayElement"),
-                CLAY_LAYOUT({ .padding = CLAY_PADDING_ALL(16), .childAlignment = {.x = CLAY_ALIGN_X_CENTER, .y = CLAY_ALIGN_Y_CENTER}}),
-                Clay_Hovered()? CLAY_RECTANGLE({
-                    .color = {200, 200, 200, 255},
-                    .cornerRadius = 10
-                })
-                : CLAY_RECTANGLE({
-                    .color = {100, 100, 100, 255},
-                    .cornerRadius = 10
-                })
-            ){
+            CLAY({
+                .id = CLAY_ID("ClayElement"),
+                .layout = { 
+                    .padding = CLAY_PADDING_ALL(16), 
+                    .childAlignment = {
+                        .x = CLAY_ALIGN_X_CENTER, 
+                        .y = CLAY_ALIGN_Y_CENTER
+                    }
+                },
+                .backgroundColor =  (Clay_Hovered()? (Clay_Color){200,200,200,255}: (Clay_Color){100,100,100,255}),
+                .cornerRadius = 10
+            }){
                 CLAY_TEXT(CLAY_STRING("This element was made with the standard Clay macros inside a lambda element"), CLAY_TEXT_CONFIG(textConfig));
             }
         }
-        clayMan.closeElement(); //we manually close the "ManualElement"
+        clayMan.closeElement(); //we manually close the "ManualElement" since closeElement() was used
 
-        //A reusable border
-        Clay_Border border{.width = 5, .color = {123, 123, 0, 123}};
 
         clayMan.element(
-            "AnotherLambdaElement",
-            Clay_LayoutConfig{.sizing = clayMan.expandX(), .padding = clayMan.padAll(16), .childAlignment = clayMan.centerXY()},
-            Clay_RectangleElementConfig{.color = {0, 0, 0, 125}},
-            Clay_BorderElementConfig{.left = border, .right = border, .top = border, .bottom = border},
+            {
+                .id = clayMan.hashID("AnotherElement"),
+                .layout = {
+                    .sizing = clayMan.expandX(),
+                    .padding = clayMan.padAll(16),
+                    .childAlignment = clayMan.centerXY()
+                },
+                .backgroundColor = {0,0,0,125},
+                .border = {
+                    .color = {123,123,0,123},
+                    .width = 5
+                }
+            },
             [&]{
                 clayMan.element(
-                    Clay_LayoutConfig{ .padding = clayMan.padAll(16)},
-                    Clay_RectangleElementConfig{.color = {255, 255, 255, 123}},
+                    {
+                        .layout = {
+                            .padding = clayMan.padAll(16)
+                        },
+                        .backgroundColor = {255,255,255,123}
+                    },
                     [&]{
                         clayMan.textElement("This element was made using the lambda method", textConfig);
                     }
@@ -118,11 +126,17 @@ void myLayout(){
             }
         );
         
-    } clayMan.closeElement(); //We close the outer container manually
+    } clayMan.closeElement(); //We close the outer container manually, since openElement() was used.
 }
 
 //Application entry
 int main(void) {
+    //Reserve memory for raylib fonts
+    Font fonts[1];
+
+    //Initialize ClayMan instance
+    ClayMan clayMan(1024, 786, Raylib_MeasureText, fonts);
+
     //Initialize Raylib
     Clay_Raylib_Initialize(
         clayMan.getWindowWidth(), 
@@ -131,14 +145,11 @@ int main(void) {
         FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_HIGHDPI | FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT
     );
 
-    //Load a font with Raylib
-    Raylib_fonts[0] = (Raylib_Font) { 
-        .fontId = 0,
-        .font = LoadFontEx("resources/Roboto-Regular.ttf", 48, 0, 400)
-    };
+    //Initialize the fonts (after initializing raylib)
+    fonts[0] = LoadFontEx("resources/Roboto-Regular.ttf", 48, 0, 400);
 
-    //Set Raylib's texture filter for the font
-    SetTextureFilter(Raylib_fonts[0].font.texture, TEXTURE_FILTER_BILINEAR);
+     //Set Raylib's texture filter for the fonts
+    SetTextureFilter(fonts[0].texture, TEXTURE_FILTER_BILINEAR);
 
     //Raylib loop
     while (!WindowShouldClose()) {
@@ -162,9 +173,13 @@ int main(void) {
         BeginDrawing(); //Rayblib native command
         ClearBackground(BLACK); //Rayblib native command
 
-        //Pass the user callback function into clayman to get Clay_RenderCommandArray
-        //Which, in-turn, get's passed to the renderer to be drawn
-        Clay_Raylib_Render(clayMan.buildLayout(myLayout)); 
+
+        clayMan.beginLayout(); //Prep for building layout
+        myLayout(clayMan); //Your layout
+
+        //Call endLayout() to get Clay_RenderCommandArray
+        //Which, in-turn, get's passed to the renderer, along with the fonts, to be drawn
+        Clay_Raylib_Render(clayMan.endLayout(), fonts); 
         
         EndDrawing(); //Rayblib native command
     }
