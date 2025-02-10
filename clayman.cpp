@@ -67,8 +67,10 @@ Clay_RenderCommandArray ClayMan::endLayout(){
 
 void ClayMan::element(Clay_ElementDeclaration configs, std::function<void()> childLambda) {
     openElement();
-    applyElementConfigs(configs);
-    childLambda();
+    if(childLambda != nullptr){
+        applyElementConfigs(configs);
+        childLambda();
+    }
     closeElement();           
 }
 
