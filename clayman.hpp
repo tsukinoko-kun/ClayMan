@@ -1,8 +1,7 @@
 #ifndef CLAY_MAN
 #define CLAY_MAN
 
-#define CLAY_IMPLEMENTATION
-#include "./include/clay.h"
+#include "include/clay.h"
 
 #include <iostream>
 #include <cstring>
@@ -54,20 +53,7 @@ class ClayMan {
             const uint32_t initialHeight, 
             Clay_Dimensions (*measureTextFunction)(Clay_StringSlice text, Clay_TextElementConfig *config, void* userData),
             void* measureTextUserData
-        ):windowWidth(initialWidth), windowHeight(initialHeight)
-        {
-            if(windowWidth == 0){windowWidth = 1;}
-            if(windowHeight == 0){windowHeight = 1;}
-            uint64_t clayRequiredMemory = Clay_MinMemorySize();
-            Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(clayRequiredMemory, malloc(clayRequiredMemory));
-
-            Clay_Initialize(clayMemory, (Clay_Dimensions) {
-            .width = (float)windowWidth,
-            .height = (float)windowHeight
-            }, (Clay_ErrorHandler) handleErrors);
-
-            Clay_SetMeasureTextFunction(measureTextFunction, measureTextUserData);
-        }
+        );
 
         //This constructor only creates the ClayMan object, you will need to create a Clay_Arena and call Clay_Initialize and Clay_SetMeasureTextFunction before using ClayMan functions
         ClayMan(const uint32_t initialWidth, const uint32_t initialHeight):windowWidth(initialWidth), windowHeight(initialHeight){
@@ -88,94 +74,31 @@ class ClayMan {
             const float scrollDeltaY, 
             const float frameTime, 
             const bool leftButtonDown
-        ){
-            windowWidth = initialWidth;
-            windowHeight = initialHeight;
-            if(windowWidth == 0){windowWidth = 1;}
-            if(windowHeight == 0){windowHeight = 1;}
-            Clay_SetLayoutDimensions((Clay_Dimensions) {
-                    .width = (float)windowWidth,
-                    .height = (float)windowHeight
-            });
-
-            Clay_SetPointerState(
-                (Clay_Vector2) { mouseX, mouseY },
-                leftButtonDown
             );
-
-            Clay_UpdateScrollContainers(
-                true,
-                (Clay_Vector2) { scrollDeltaX, scrollDeltaY },
-                frameTime
-            );
-        }
 
         //If not using buildLayout(), call this instead of Clay_BeginLayout directly each frame before creating elements to reset string arena index
-        void beginLayout(){
-            start = std::chrono::high_resolution_clock::now();
-            countFrames();
-            resetStringArenaIndex();
-            Clay_BeginLayout();
-        }
+        void beginLayout();
 
         //If not using buildLayout(), call this instead of Clay_EndLayout directly each frame after creating elements to handle automatic element closures for preventing crashes.
-        Clay_RenderCommandArray endLayout(){
-            closeAllElements();
-            measureTime();
-            return Clay_EndLayout();
-        }
+        Clay_RenderCommandArray endLayout();
         
         //Creates an element in-place. Automatically opens, applies configs, calls all child elements, and closes.
-        void element(Clay_ElementDeclaration configs, std::function<void()> childLambda = nullptr) {
-            openElement();
-            applyElementConfigs(configs);
-            childLambda();
-            closeElement();           
-        }
+        void element(Clay_ElementDeclaration configs, std::function<void()> childLambda = nullptr);
         
         //Creates an element in-place. Automatically opens, applies default configs, calls all child elements, and closes.
-        void element(std::function<void()> childLambda = nullptr) {
-            openElement();
-            if(childLambda != nullptr){
-                childLambda();
-            }
-            closeElement();           
-        }
+        void element(std::function<void()> childLambda = nullptr);
 
         //Manually opens an element with configurations, call closeElement() after children (if any) to close.
-        void openElement(Clay_ElementDeclaration configs){
-            openElement();
-            applyElementConfigs(configs);
-        }
+        void openElement(Clay_ElementDeclaration configs);
 
         //Manually opens an element with default configurations, call closeElement() after children (if any) to close.
-        void openElement(){
-            Clay__OpenElement();
-            openElementCount++;
-        }
+        void openElement();
 
         //Manually closes an element. Call after the children of an element (if any) that was opened manually with openElement()
-        void closeElement(){
-            Clay__CloseElement();
-            if(openElementCount <=0){
-                if(!warnedAboutUnderflow){
-                    printf("Whoops! All elements are already closed!");
-                    warnedAboutUnderflow = true;
-                }
-            }else{
-                openElementCount--;
-            }
-        }
+        void closeElement();
 
         //A self-contained text element, with no children.
-        void textElement(const std::string& text, const Clay_TextElementConfig textElementConfig){
-            Clay__OpenTextElement(
-                toClayString(text), 
-                Clay__StoreTextElementConfig(
-                (Clay__Clay_TextElementConfigWrapper(textElementConfig)).wrapped
-                )
-            );
-        }
+        void textElement(const std::string& text, const Clay_TextElementConfig textElementConfig);
 
         //A self-contained text element, with no children. Takes a string literal.
         template<size_t N>
@@ -200,50 +123,22 @@ class ClayMan {
         }
 
         //Convenience function for .sizing layout parameter
-        Clay_Sizing fixedSize(const uint32_t w, const uint32_t h) {
-            return{
-                .width = (Clay_SizingAxis { .size = { .minMax = { (float)w, (float)w } }, .type = CLAY__SIZING_TYPE_FIXED }),
-                .height = (Clay_SizingAxis { .size = { .minMax = { (float)h, (float)h } }, .type = CLAY__SIZING_TYPE_FIXED }) 
-            };
-        }
+        Clay_Sizing fixedSize(const uint32_t w, const uint32_t h);
 
         //Convenience function for .sizing layout parameter
-        Clay_Sizing expandXY(){
-            return {
-                .width = (Clay_SizingAxis { .size = { .minMax = { {0} } }, .type = CLAY__SIZING_TYPE_GROW }),
-                .height = (Clay_SizingAxis { .size = { .minMax = { {0} } }, .type = CLAY__SIZING_TYPE_GROW })
-            };
-        }
+        Clay_Sizing expandXY();
 
         //Convenience function for .sizing layout parameter
-        Clay_Sizing expandX(){
-            return {
-                .width = (Clay_SizingAxis { .size = { .minMax = { {0} } }, .type = CLAY__SIZING_TYPE_GROW }),
-            };
-        }
+        Clay_Sizing expandX();
 
         //Convenience function for .sizing layout parameter
-        Clay_Sizing expandY(){
-            return {
-                .height = (Clay_SizingAxis { .size = { .minMax = { {0} } }, .type = CLAY__SIZING_TYPE_GROW }),
-            };
-        }
+        Clay_Sizing expandY();
 
         //Convenience function for .sizing layout parameter
-        Clay_Sizing expandXfixedY(const uint32_t h){
-            return {
-                .width = (Clay_SizingAxis { .size = { .minMax = { {0} } }, .type = CLAY__SIZING_TYPE_GROW }),
-                .height = (Clay_SizingAxis { .size = { .minMax = { (float)h, (float)h } }, .type = CLAY__SIZING_TYPE_FIXED }) 
-            };
-        }
+        Clay_Sizing expandXfixedY(const uint32_t h);
 
         //Convenience function for .sizing layout parameter
-        Clay_Sizing expandYfixedX(const uint32_t w){
-            return {
-                .width = (Clay_SizingAxis { .size = { .minMax = { (float)w, (float)w } }, .type = CLAY__SIZING_TYPE_FIXED }),
-                .height = (Clay_SizingAxis { .size = { .minMax = { {0} } }, .type = CLAY__SIZING_TYPE_GROW })
-            };
-        }
+        Clay_Sizing expandYfixedX(const uint32_t w);
 
         //Convenience function for .padding layout parameter
         Clay_Padding padAll(const uint16_t p){
@@ -286,45 +181,29 @@ class ClayMan {
         }
 
         //Convenience function for .childAlignment layout parameter
-        Clay_ChildAlignment centerXY(){
-            return {.x = CLAY_ALIGN_X_CENTER, .y = CLAY_ALIGN_Y_CENTER};
-        }
+        Clay_ChildAlignment centerXY();
 
         //Hashes string literal into a clay ID
-        Clay_ElementId hashID(const Clay_String& id){
-            return Clay__HashString(id, 0, 0);
-        }
+        Clay_ElementId hashID(const Clay_String& id);
 
         //Hashes string into a clay ID
-        Clay_ElementId hashID(const std::string& id){
-            return Clay__HashString(toClayString(id), 0, 0);
-        }
+        Clay_ElementId hashID(const std::string& id);
 
         //Gets clay internal left-mouse-button state this frame
-        bool mousePressed(){
-            return Clay_GetCurrentContext()->pointerInfo.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME;
-        }
+        bool mousePressed();
 
-        bool pointerOver(const Clay_String id){
-            return Clay_PointerOver(getClayElementId(id));
-        }
+        bool pointerOver(const Clay_String id);
 
-        bool pointerOver(const std::string& id){
-            return Clay_PointerOver(getClayElementId(toClayString(id)));
-        }
+        bool pointerOver(const std::string& id);
 
         template<size_t N>
         bool pointerOver(const char(&id)[N]){
             return Clay_PointerOver(getClayElementId(toClayString(id)));
         }
 
-        Clay_ElementId getClayElementId(const Clay_String id){
-            return Clay_GetElementId(id);
-        }
+        Clay_ElementId getClayElementId(const Clay_String id);
 
-        Clay_ElementId getClayElementId(const std::string& id){
-            return Clay_GetElementId(toClayString(id));
-        }
+        Clay_ElementId getClayElementId(const std::string& id);
 
         template<size_t N>
         Clay_ElementId getClayElementId(const char(&id)[N]){
@@ -332,9 +211,7 @@ class ClayMan {
         }
 
         //Caches std::string into a string arena, then creates and returns a Clay_String
-        Clay_String toClayString(const std::string& str){
-            return (Clay_String){ .length = (int32_t)str.size(), .chars = insertStringIntoArena(str)};
-        }
+        Clay_String toClayString(const std::string& str);
 
         //Caches string literal into a string arena, then creates and returns a Clay_String
         template<size_t N>
@@ -404,19 +281,9 @@ class ClayMan {
             return startPtr;
         }
 
-        void applyElementConfigs(const Clay_ElementDeclaration& configs){
-            Clay__ConfigureOpenElement((Clay__Clay_ElementDeclarationWrapper {configs}).wrapped);
-        }
+        void applyElementConfigs(const Clay_ElementDeclaration& configs);
 
-        void closeAllElements(){
-            while(openElementCount > 0){
-                if(!warnedAboutClose){
-                    printf("WARN: An element was not closed.");
-                    warnedAboutClose = true;
-                }
-                closeElement();
-            }
-        }
+        void closeAllElements();
 
         //Clay_ErrorHandler
         static void handleErrors(Clay_ErrorData errorData) {
