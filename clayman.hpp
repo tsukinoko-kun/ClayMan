@@ -74,7 +74,7 @@ class ClayMan {
             const float scrollDeltaY, 
             const float frameTime, 
             const bool leftButtonDown
-            );
+        );
 
         //If not using buildLayout(), call this instead of Clay_BeginLayout directly each frame before creating elements to reset string arena index
         void beginLayout();
@@ -100,22 +100,14 @@ class ClayMan {
         //A self-contained text element, with no children.
         void textElement(const std::string& text, const Clay_TextElementConfig textElementConfig);
 
+        //A self-contained text element, with no children.
+        void textElement(const Clay_String& text, const Clay_TextElementConfig textElementConfig);
+
         //A self-contained text element, with no children. Takes a string literal.
         template<size_t N>
         void textElement(const char(&text)[N], const Clay_TextElementConfig textElementConfig){
             Clay__OpenTextElement(
                 toClayString(text), 
-                Clay__StoreTextElementConfig(
-                (Clay__Clay_TextElementConfigWrapper(textElementConfig)).wrapped
-                )
-            );
-        }
-
-        //A self-contained text element, with no children.
-        template<size_t N>
-        void textElement(const Clay_String& text, const Clay_TextElementConfig textElementConfig){
-            Clay__OpenTextElement(
-                text, 
                 Clay__StoreTextElementConfig(
                 (Clay__Clay_TextElementConfigWrapper(textElementConfig)).wrapped
                 )
@@ -141,44 +133,28 @@ class ClayMan {
         Clay_Sizing expandYfixedX(const uint32_t w);
 
         //Convenience function for .padding layout parameter
-        Clay_Padding padAll(const uint16_t p){
-            return {p, p, p, p};
-        }
+        Clay_Padding padAll(const uint16_t p);
        
         //Convenience function for .padding layout parameter
-        Clay_Padding padX(const uint16_t p){
-            return {p, p, 0, 0};
-        }
+        Clay_Padding padX(const uint16_t p);
 
         //Convenience function for .padding layout parameter
-        Clay_Padding padY(const uint16_t p){
-            return {0, 0, p, p};
-        }
-        
-        //Convenience function for .padding layout parameter
-        Clay_Padding padXY(const uint16_t px, const uint16_t py){
-            return {px, px, py, py};
-        }
+        Clay_Padding padY(const uint16_t p);
 
         //Convenience function for .padding layout parameter
-        Clay_Padding padLeft(const uint16_t pl){
-            return {pl, 0, 0, 0};
-        }
+        Clay_Padding padXY(const uint16_t px, const uint16_t py);
 
         //Convenience function for .padding layout parameter
-        Clay_Padding padRight(const uint16_t pr){
-            return {0, pr, 0, 0};
-        }
+        Clay_Padding padLeft(const uint16_t pl);
 
         //Convenience function for .padding layout parameter
-        Clay_Padding padTop(const uint16_t pt){
-            return {0, 0, pt, 0};
-        }
+        Clay_Padding padRight(const uint16_t pr);
 
         //Convenience function for .padding layout parameter
-        Clay_Padding padBottom(const uint16_t pb){
-            return {0, 0, 0, pb};
-        }
+        Clay_Padding padTop(const uint16_t pt);
+
+        //Convenience function for .padding layout parameter
+        Clay_Padding padBottom(const uint16_t pb);
 
         //Convenience function for .childAlignment layout parameter
         Clay_ChildAlignment centerXY();
@@ -220,19 +196,13 @@ class ClayMan {
         }
 
         //Gets current window width
-        int getWindowWidth(){
-            return windowWidth;
-        }
+        int getWindowWidth();
 
         //Gets current window height
-        int getWindowHeight(){
-            return windowHeight;
-        }
+        int getWindowHeight();
 
         //Gets current frame count, resets at max int32_t
-        uint32_t getFramecount(){
-            return framecount;
-        }
+        uint32_t getFramecount();
 
     ////////////////////////////////////////////////////////////private//////////////////////////////////////////////////////////////
     private:
@@ -257,7 +227,6 @@ class ClayMan {
 
         //Tracks the heiarchy depth of the current element in the layout
         uint32_t openElementCount = 0;
-        
         
         //Resets index tracker for string arena to 0
         void resetStringArenaIndex() {

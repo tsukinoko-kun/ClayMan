@@ -3,53 +3,53 @@
 #include "clayman.hpp"
 
 ClayMan::ClayMan(
-        const uint32_t initialWidth, 
-        const uint32_t initialHeight, 
-        Clay_Dimensions (*measureTextFunction)(Clay_StringSlice text, Clay_TextElementConfig *config, void* userData),
-        void* measureTextUserData
-        ):windowWidth(initialWidth), windowHeight(initialHeight) {
-            if(windowWidth == 0){windowWidth = 1;}
-            if(windowHeight == 0){windowHeight = 1;}
-            uint64_t clayRequiredMemory = Clay_MinMemorySize();
-            Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(clayRequiredMemory, malloc(clayRequiredMemory));
+    const uint32_t initialWidth, 
+    const uint32_t initialHeight, 
+    Clay_Dimensions (*measureTextFunction)(Clay_StringSlice text, Clay_TextElementConfig *config, void* userData),
+    void* measureTextUserData
+):windowWidth(initialWidth), windowHeight(initialHeight) {
+    if(windowWidth == 0){windowWidth = 1;}
+    if(windowHeight == 0){windowHeight = 1;}
+    uint64_t clayRequiredMemory = Clay_MinMemorySize();
+    Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(clayRequiredMemory, malloc(clayRequiredMemory));
 
-            Clay_Initialize(clayMemory, (Clay_Dimensions) {
-            .width = (float)windowWidth,
-            .height = (float)windowHeight
-            }, (Clay_ErrorHandler) handleErrors);
+    Clay_Initialize(clayMemory, (Clay_Dimensions) {
+        .width = (float)windowWidth,
+        .height = (float)windowHeight
+    }, (Clay_ErrorHandler) handleErrors);
 
-            Clay_SetMeasureTextFunction(measureTextFunction, measureTextUserData);
+    Clay_SetMeasureTextFunction(measureTextFunction, measureTextUserData);
 }
 
 void ClayMan::updateClayState(
-        const uint32_t initialWidth, 
-        const uint32_t initialHeight, 
-        const float mouseX, 
-        const float mouseY, 
-        const float scrollDeltaX, 
-        const float scrollDeltaY, 
-        const float frameTime, 
-        const bool leftButtonDown
-        ){
+    const uint32_t initialWidth, 
+    const uint32_t initialHeight, 
+    const float mouseX, 
+    const float mouseY, 
+    const float scrollDeltaX, 
+    const float scrollDeltaY, 
+    const float frameTime, 
+    const bool leftButtonDown
+){
     windowWidth = initialWidth;
     windowHeight = initialHeight;
     if(windowWidth == 0){windowWidth = 1;}
     if(windowHeight == 0){windowHeight = 1;}
     Clay_SetLayoutDimensions((Clay_Dimensions) {
-            .width = (float)windowWidth,
-            .height = (float)windowHeight
-            });
+        .width = (float)windowWidth,
+        .height = (float)windowHeight
+    });
 
     Clay_SetPointerState(
-            (Clay_Vector2) { mouseX, mouseY },
-            leftButtonDown
-            );
+        (Clay_Vector2) { mouseX, mouseY },
+        leftButtonDown
+    );
 
     Clay_UpdateScrollContainers(
-            true,
-            (Clay_Vector2) { scrollDeltaX, scrollDeltaY },
-            frameTime
-            );
+        true,
+        (Clay_Vector2) { scrollDeltaX, scrollDeltaY },
+        frameTime
+    );
 }
 
 void ClayMan::beginLayout(){
@@ -104,24 +104,33 @@ void ClayMan::closeElement(){
 
 void ClayMan::textElement(const std::string& text, const Clay_TextElementConfig textElementConfig){
     Clay__OpenTextElement(
-            toClayString(text), 
-            Clay__StoreTextElementConfig(
-                (Clay__Clay_TextElementConfigWrapper(textElementConfig)).wrapped
-                )
-            );
+        toClayString(text), 
+        Clay__StoreTextElementConfig(
+            (Clay__Clay_TextElementConfigWrapper(textElementConfig)).wrapped
+            )
+    );
+}
+
+void ClayMan::textElement(const Clay_String& text, const Clay_TextElementConfig textElementConfig){
+    Clay__OpenTextElement(
+        text, 
+        Clay__StoreTextElementConfig(
+        (Clay__Clay_TextElementConfigWrapper(textElementConfig)).wrapped
+        )
+    );
 }
 
 Clay_Sizing ClayMan::fixedSize(const uint32_t w, const uint32_t h) {
     return{
         .width = (Clay_SizingAxis { .size = { .minMax = { (float)w, (float)w } }, .type = CLAY__SIZING_TYPE_FIXED }),
-            .height = (Clay_SizingAxis { .size = { .minMax = { (float)h, (float)h } }, .type = CLAY__SIZING_TYPE_FIXED }) 
+        .height = (Clay_SizingAxis { .size = { .minMax = { (float)h, (float)h } }, .type = CLAY__SIZING_TYPE_FIXED }) 
     };
 }
 
 Clay_Sizing ClayMan::expandXY(){
     return {
         .width = (Clay_SizingAxis { .size = { .minMax = { {0} } }, .type = CLAY__SIZING_TYPE_GROW }),
-            .height = (Clay_SizingAxis { .size = { .minMax = { {0} } }, .type = CLAY__SIZING_TYPE_GROW })
+        .height = (Clay_SizingAxis { .size = { .minMax = { {0} } }, .type = CLAY__SIZING_TYPE_GROW })
     };
 }
 
@@ -140,15 +149,47 @@ Clay_Sizing ClayMan::expandY(){
 Clay_Sizing ClayMan::expandXfixedY(const uint32_t h){
     return {
         .width = (Clay_SizingAxis { .size = { .minMax = { {0} } }, .type = CLAY__SIZING_TYPE_GROW }),
-            .height = (Clay_SizingAxis { .size = { .minMax = { (float)h, (float)h } }, .type = CLAY__SIZING_TYPE_FIXED }) 
+        .height = (Clay_SizingAxis { .size = { .minMax = { (float)h, (float)h } }, .type = CLAY__SIZING_TYPE_FIXED }) 
     };
 }
 
 Clay_Sizing ClayMan::expandYfixedX(const uint32_t w){
     return {
         .width = (Clay_SizingAxis { .size = { .minMax = { (float)w, (float)w } }, .type = CLAY__SIZING_TYPE_FIXED }),
-            .height = (Clay_SizingAxis { .size = { .minMax = { {0} } }, .type = CLAY__SIZING_TYPE_GROW })
+        .height = (Clay_SizingAxis { .size = { .minMax = { {0} } }, .type = CLAY__SIZING_TYPE_GROW })
     };
+}
+
+Clay_Padding ClayMan::padAll(const uint16_t p){
+    return {p, p, p, p};
+}
+
+Clay_Padding ClayMan::padX(const uint16_t p){
+    return {p, p, 0, 0};
+}
+
+Clay_Padding ClayMan::padY(const uint16_t p){
+    return {0, 0, p, p};
+}
+
+Clay_Padding ClayMan::padXY(const uint16_t px, const uint16_t py){
+    return {px, px, py, py};
+}
+
+Clay_Padding ClayMan::padLeft(const uint16_t pl){
+    return {pl, 0, 0, 0};
+}
+
+Clay_Padding ClayMan::padRight(const uint16_t pr){
+    return {0, pr, 0, 0};
+}
+
+Clay_Padding ClayMan::padTop(const uint16_t pt){
+    return {0, 0, pt, 0};
+}
+
+Clay_Padding ClayMan::padBottom(const uint16_t pb){
+    return {0, 0, 0, pb};
 }
 
 Clay_ChildAlignment ClayMan::centerXY(){
@@ -199,4 +240,16 @@ void ClayMan::closeAllElements(){
         }
         closeElement();
     }
+}
+
+int ClayMan::getWindowWidth(){
+    return windowWidth;
+}
+
+int ClayMan::getWindowHeight(){
+    return windowHeight;
+}
+
+uint32_t ClayMan::getFramecount(){
+    return framecount;
 }
