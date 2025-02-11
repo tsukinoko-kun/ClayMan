@@ -187,7 +187,7 @@ ClayMan.openElement({.id = clayMan.hashID("Element2")});{
 **NOTE**: There is currently a 100000 char limit for the internal string arena, this includes all characters for all strings and string literals passed into ClayMan functions each frame.
 
 ## How to use ClayMan (with Raylib renderer)
-To use this library in your project, simply copy the `clayman.hpp` header, as well as the `include` folder (which has the compatible version of `clay.h` as well as the Raylib renderer) into your working directory. Then, in your project:
+To use this library in your project, simply copy the `clayman.hpp` header, the `clayman.cpp` source file, as well as the `include` folder (which has the compatible version of `clay.h` as well as the Raylib renderer) into your working directory. Then, in your project:
 
 ```cpp
 #include "clayman.hpp"
@@ -598,3 +598,5 @@ Since this library is just a wrapper for Clay; any original clay structs, macros
     - Updated advanced use example to use beginLayout and endLayout, so auto-close still works.
 - February 6, 2025
     - Major update to match new CLAY macro with Clay_ElementDeclaration. Simplified API, added an example, and updated examples.
+- February 11, 2025
+    - Split ClayMan into header and source to allow inclusion in multiple sources. Added an example.

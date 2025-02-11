@@ -26,7 +26,7 @@ int main(void) {
     Clay_Raylib_Initialize(
         clayMan.getWindowWidth(), 
         clayMan.getWindowHeight(), 
-        "ClayMan C++ Quick Example", 
+        "ClayMan C++ Advanced Use Example", 
         FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_HIGHDPI | FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT
     );
 

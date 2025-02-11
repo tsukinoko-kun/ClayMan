@@ -57,3 +57,15 @@ add_custom_command(
     ${EXAMPLES_DIR}/advanced-use-example/resources
     $<TARGET_FILE_DIR:advanced-use-example>/resources
 )
+
+#separate sources example
+add_executable(separate-sources-example ${EXAMPLES_DIR}/separate-sources-example/separate-sources-example.cpp ${EXAMPLES_DIR}/separate-sources-example/layout.cpp clayman.cpp)
+set_target_properties(separate-sources-example PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${EXAMPLES_OUTPUT_DIR}/separate-sources-example)
+target_link_libraries(separate-sources-example raylib)
+
+add_custom_command(
+    TARGET separate-sources-example POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${EXAMPLES_DIR}/separate-sources-example/resources
+    $<TARGET_FILE_DIR:separate-sources-example>/resources
+)
