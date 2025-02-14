@@ -126,36 +126,6 @@ void myLayout(ClayMan& clayMan){
                 );
             }
         );
-        
-        // CLAY({
-        //     .layout = {
-        //         .sizing = clayMan.fixedSize(500, 100)
-        //     },
-        //     .backgroundColor = {123,0,123,255}
-        // });
-
-        clayMan.element();
-
-        clayMan.element({
-            .layout = {
-                .sizing = clayMan.fixedSize(500,100)
-            },
-            .backgroundColor = {123,0,123, 255}
-        });
-
-        clayMan.element([&](){
-            clayMan.textElement("asdjdkdkdkdkdkdkdkdkdk", textConfig);
-        });
-
-        clayMan.element([&](){
-            clayMan.textElement("asdjdkdkdkdkdkdkdkdkdk", textConfig);
-        }, {
-            .layout = {
-                .sizing = clayMan.fixedSize(500,100)
-            },
-            .backgroundColor = {123,0,123, 255}
-        });
-        
     } clayMan.closeElement(); //We close the outer container manually, since openElement() was used.
 }
 
