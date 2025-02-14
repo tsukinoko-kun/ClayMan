@@ -21,6 +21,7 @@ add_custom_command(
     ${EXAMPLES_DIR}/readme-example/resources
     $<TARGET_FILE_DIR:readme-example>/resources
 )
+#end readme example
 
 #full example
 add_executable(full-example ${EXAMPLES_DIR}/full-example/full-example.cpp clayman.cpp)
@@ -33,6 +34,7 @@ add_custom_command(
     ${EXAMPLES_DIR}/full-example/resources
     $<TARGET_FILE_DIR:full-example>/resources
 )
+#end full example
 
 #quick example
 add_executable(quick-example ${EXAMPLES_DIR}/quick-example/quick-example.cpp clayman.cpp)
@@ -45,6 +47,7 @@ add_custom_command(
     ${EXAMPLES_DIR}/quick-example/resources
     $<TARGET_FILE_DIR:quick-example>/resources
 )
+#end quick example
 
 #advanced use example
 add_executable(advanced-use-example ${EXAMPLES_DIR}/advanced-use-example/advanced-use-example.cpp clayman.cpp)
@@ -57,6 +60,7 @@ add_custom_command(
     ${EXAMPLES_DIR}/advanced-use-example/resources
     $<TARGET_FILE_DIR:advanced-use-example>/resources
 )
+#end advanced use example
 
 #separate sources example
 add_executable(separate-sources-example ${EXAMPLES_DIR}/separate-sources-example/separate-sources-example.cpp ${EXAMPLES_DIR}/separate-sources-example/layout.cpp clayman.cpp)
@@ -69,3 +73,27 @@ add_custom_command(
     ${EXAMPLES_DIR}/separate-sources-example/resources
     $<TARGET_FILE_DIR:separate-sources-example>/resources
 )
+#end separate sources example
+
+# #sdl2 example
+# set(SDL2_STATIC_LIB ON)
+# find_package(SDL2 REQUIRED)
+# find_package(SDL2_ttf REQUIRED)
+# find_package(SDL2_image REQUIRED)
+
+# add_executable(sdl2-example ${EXAMPLES_DIR}/sdl2-example/sdl2-example.cpp clayman.cpp)
+# set_target_properties(sdl2-example PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${EXAMPLES_OUTPUT_DIR}/sdl2-example)
+# target_link_libraries(sdl2-example PRIVATE 
+#     SDL2::SDL2main
+#     SDL2::SDL2-static
+#     SDL2_ttf::SDL2_ttf-static
+#     SDL2_image::SDL2_image-static
+# )
+
+# add_custom_command(
+#     TARGET sdl2-example POST_BUILD
+#     COMMAND ${CMAKE_COMMAND} -E copy_directory
+#     ${EXAMPLES_DIR}/sdl2-example/resources
+#     $<TARGET_FILE_DIR:sdl2-example>/resources
+# )
+# #end sdl2 example
