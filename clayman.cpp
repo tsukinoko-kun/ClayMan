@@ -65,7 +65,14 @@ Clay_RenderCommandArray ClayMan::endLayout(){
     return Clay_EndLayout();
 }
 
+void ClayMan::element(){
+    openElement();
+    applyElementConfigs({});
+    closeElement();  
+}
+
 void ClayMan::element(Clay_ElementDeclaration configs, std::function<void()> childLambda) {
+    
     openElement();
     applyElementConfigs(configs);
     if(childLambda != nullptr){
@@ -74,12 +81,19 @@ void ClayMan::element(Clay_ElementDeclaration configs, std::function<void()> chi
     closeElement();           
 }
 
-void ClayMan::element(std::function<void()> childLambda) {
+void ClayMan::element(Clay_ElementDeclaration configs){
     openElement();
+    applyElementConfigs(configs);
+    closeElement();
+}
+
+void ClayMan::element(std::function<void()> childLambda){
+    openElement();
+    applyElementConfigs({});
     if(childLambda != nullptr){
         childLambda();
     }
-    closeElement();           
+    closeElement();
 }
 
 void ClayMan::openElement(Clay_ElementDeclaration configs){

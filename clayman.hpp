@@ -82,11 +82,34 @@ class ClayMan {
         //If not using buildLayout(), call this instead of Clay_EndLayout directly each frame after creating elements to handle automatic element closures for preventing crashes.
         Clay_RenderCommandArray endLayout();
         
-        //Creates an element in-place. Automatically opens, applies configs, calls all child elements, and closes.
-        void element(Clay_ElementDeclaration configs, std::function<void()> childLambda = nullptr);
+        // Creates an element in-place. Automatically opens, applies default configs, and closes.
+        void element();
+
+        // Creates an element in-place. Automatically opens, applies configs, calls all child elements, and closes.
+        void element(Clay_ElementDeclaration configs, std::function<void()> childLambda);
         
-        //Creates an element in-place. Automatically opens, applies default configs, calls all child elements, and closes.
-        void element(std::function<void()> childLambda = nullptr);
+        // Creates an element in-place. Automatically opens, applies configs, calls all child elements, and closes.
+        template <typename T>
+        void element(T childLambda, Clay_ElementDeclaration configs) {
+            if (std::invocable<T>) {
+                openElement();
+                applyElementConfigs(configs);
+                if((std::function<void()>)childLambda != nullptr){
+                    childLambda();
+                }
+                closeElement();
+            } else {
+                openElement();
+                applyElementConfigs(configs);
+                closeElement();
+            }
+        }
+
+        // Creates an element in-place. Automatically opens, applies configs, and closes.
+        void element(Clay_ElementDeclaration configs);
+
+        // Creates an element in-place. Automatically opens, applies default configs, calls all child elements, and closes.
+        void element(std::function<void()> childLambda);
 
         //Manually opens an element with configurations, call closeElement() after children (if any) to close.
         void openElement(Clay_ElementDeclaration configs);
@@ -286,6 +309,18 @@ class ClayMan {
                 std::cout << "New maximum layout time of " << maxframetime << " microseconds." << std::endl;
             }
         }
+
+        //Checks params from element() for children callback lambda
+        // template <typename F, typename... Args>
+        // void checkForChildCallback(bool& childcallbackfound, F&& f, Args&&... args){
+        //     if(!childcallbackfound){
+        //         bool isfunc = std::invocable<F, Args...>;
+        //         if(isfunc){
+        //             childcallbackfound = true;
+        //         }else{
+        //         }
+        //     }
+        // }
 };
 
 #endif //end of file
