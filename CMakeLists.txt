@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.15)
 project(ClayManager)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED TRUE)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(EXAMPLES_DIR ${CMAKE_SOURCE_DIR}/examples)
 set(EXAMPLES_OUTPUT_DIR ${CMAKE_BINARY_DIR}/examples)
@@ -75,25 +80,25 @@ add_custom_command(
 )
 #end separate sources example
 
-# #sdl2 example
-# set(SDL2_STATIC_LIB ON)
-# find_package(SDL2 REQUIRED)
-# find_package(SDL2_ttf REQUIRED)
-# find_package(SDL2_image REQUIRED)
+#sdl2 example
+set(SDL2_STATIC_LIB ON)
+find_package(SDL2 REQUIRED)
+find_package(SDL2_ttf REQUIRED)
+find_package(SDL2_image REQUIRED)
 
-# add_executable(sdl2-example ${EXAMPLES_DIR}/sdl2-example/sdl2-example.cpp clayman.cpp)
-# set_target_properties(sdl2-example PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${EXAMPLES_OUTPUT_DIR}/sdl2-example)
-# target_link_libraries(sdl2-example PRIVATE 
-#     SDL2::SDL2main
-#     SDL2::SDL2-static
-#     SDL2_ttf::SDL2_ttf-static
-#     SDL2_image::SDL2_image-static
-# )
+add_executable(sdl2-example ${EXAMPLES_DIR}/sdl2-example/sdl2-example.cpp clayman.cpp)
+set_target_properties(sdl2-example PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${EXAMPLES_OUTPUT_DIR}/sdl2-example)
+target_link_libraries(sdl2-example PRIVATE 
+    SDL2::SDL2main
+    SDL2::SDL2-static
+    SDL2_ttf::SDL2_ttf-static
+    SDL2_image::SDL2_image-static
+)
 
-# add_custom_command(
-#     TARGET sdl2-example POST_BUILD
-#     COMMAND ${CMAKE_COMMAND} -E copy_directory
-#     ${EXAMPLES_DIR}/sdl2-example/resources
-#     $<TARGET_FILE_DIR:sdl2-example>/resources
-# )
-# #end sdl2 example
+add_custom_command(
+    TARGET sdl2-example POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${EXAMPLES_DIR}/sdl2-example/resources
+    $<TARGET_FILE_DIR:sdl2-example>/resources
+)
+#end sdl2 example

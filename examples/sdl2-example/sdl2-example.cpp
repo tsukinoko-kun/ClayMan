@@ -175,9 +175,13 @@ int main(int argc, char *argv[]) {
 
     SDL_Window *window = NULL;
     SDL_Renderer *renderer = NULL;
-    if (SDL_CreateWindowAndRenderer(clayMan.getWindowWidth(), clayMan.getWindowHeight(), SDL_WINDOW_RESIZABLE, &window, &renderer) < 0) {
-        fprintf(stderr, "Error: could not create window and renderer: %s", SDL_GetError());
-    }
+    SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl"); //for antialiasing
+    window = SDL_CreateWindow("SDL", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, clayMan.getWindowWidth(), clayMan.getWindowHeight(), SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 8); //for antialiasing
+    bool enableVsync = false;
+    if(enableVsync){ renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);}
+    else{renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);}
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
     Uint64 NOW = SDL_GetPerformanceCounter();
     Uint64 LAST = 0;
@@ -223,7 +227,14 @@ int main(int argc, char *argv[]) {
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
+
+        // SDL_Texture* aaTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, clayMan.getWindowWidth() * 10, clayMan.getWindowHeight() * 10);
+        // SDL_SetRenderTarget(renderer, aaTexture);
         Clay_SDL2_Render(renderer, renderCommands, fonts);
+        // SDL_SetRenderTarget(renderer, NULL);
+        // SDL_Rect destRect = { 0, 0, clayMan.getWindowWidth(), clayMan.getWindowHeight() };
+        // SDL_RenderCopy(renderer, aaTexture, NULL, &destRect);
+
         SDL_RenderPresent(renderer);
     }
 

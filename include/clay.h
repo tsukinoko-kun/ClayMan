@@ -1443,7 +1443,7 @@ Clay__MeasureTextCacheItem *Clay__MeasureTextCached(Clay_String *text, Clay_Text
         measured = Clay__MeasureTextCacheItemArray_Get(&context->measureTextHashMapInternal, newItemIndex);
     } else {
         if (context->measureTextHashMapInternal.length == context->measureTextHashMapInternal.capacity - 1) {
-            if (context->booleanWarnings.maxTextMeasureCacheExceeded) {
+            if (!context->booleanWarnings.maxTextMeasureCacheExceeded) {
                 context->errorHandler.errorHandlerFunction(CLAY__INIT(Clay_ErrorData) {
                         .errorType = CLAY_ERROR_TYPE_ELEMENTS_CAPACITY_EXCEEDED,
                         .errorText = CLAY_STRING("Clay ran out of capacity while attempting to measure text elements. Try using Clay_SetMaxElementCount() with a higher value."),
@@ -1918,7 +1918,7 @@ void Clay__ConfigureOpenElement(const Clay_ElementDeclaration declaration) {
                     .clipElementId = clipElementId,
                     .zIndex = floatingConfig.zIndex,
             });
-            Clay__AttachElementConfig(CLAY__INIT(Clay_ElementConfigUnion) { .floatingElementConfig = Clay__StoreFloatingElementConfig(declaration.floating) }, CLAY__ELEMENT_CONFIG_TYPE_FLOATING);
+            Clay__AttachElementConfig(CLAY__INIT(Clay_ElementConfigUnion) { .floatingElementConfig = Clay__StoreFloatingElementConfig(floatingConfig) }, CLAY__ELEMENT_CONFIG_TYPE_FLOATING);
         }
     }
     if (declaration.custom.customData) {
@@ -3589,7 +3589,7 @@ uint32_t Clay_MinMemorySize(void) {
     Clay_Context* currentContext = Clay_GetCurrentContext();
     if (currentContext) {
         fakeContext.maxElementCount = currentContext->maxElementCount;
-        fakeContext.maxMeasureTextCacheWordCount = currentContext->maxElementCount;
+        fakeContext.maxMeasureTextCacheWordCount = currentContext->maxMeasureTextCacheWordCount;
     }
     // Reserve space in the arena for the context, important for calculating min memory size correctly
     Clay__Context_Allocate_Arena(&fakeContext.internalArena);
