@@ -1,3 +1,5 @@
+// #include <cstddef>
+// #include <iostream>
 #define CLAY_IMPLEMENTATION
 #include "include/clay.h"
 #include "clayman.hpp"
@@ -119,20 +121,17 @@ void ClayMan::closeElement(){
 }
 
 void ClayMan::textElement(const std::string& text, const Clay_TextElementConfig textElementConfig){
+    Clay_String cs = toClayString(text);
     Clay__OpenTextElement(
-        toClayString(text), 
-        Clay__StoreTextElementConfig(
-            (Clay__Clay_TextElementConfigWrapper(textElementConfig)).wrapped
-            )
+        cs, 
+        Clay__StoreTextElementConfig((Clay__Clay_TextElementConfigWrapper(textElementConfig)).wrapped)
     );
 }
 
 void ClayMan::textElement(const Clay_String& text, const Clay_TextElementConfig textElementConfig){
     Clay__OpenTextElement(
         text, 
-        Clay__StoreTextElementConfig(
-        (Clay__Clay_TextElementConfigWrapper(textElementConfig)).wrapped
-        )
+        Clay__StoreTextElementConfig((Clay__Clay_TextElementConfigWrapper(textElementConfig)).wrapped)
     );
 }
 
@@ -145,26 +144,26 @@ Clay_Sizing ClayMan::fixedSize(const uint32_t w, const uint32_t h) {
 
 Clay_Sizing ClayMan::expandXY(){
     return {
-        .width = (Clay_SizingAxis { .size = { .minMax = { {0} } }, .type = CLAY__SIZING_TYPE_GROW }),
-        .height = (Clay_SizingAxis { .size = { .minMax = { {0} } }, .type = CLAY__SIZING_TYPE_GROW })
+        .width = (Clay_SizingAxis { .size = { .minMax = {} }, .type = CLAY__SIZING_TYPE_GROW }),
+        .height = (Clay_SizingAxis { .size = { .minMax = {} }, .type = CLAY__SIZING_TYPE_GROW })
     };
 }
 
 Clay_Sizing ClayMan::expandX(){
     return {
-        .width = (Clay_SizingAxis { .size = { .minMax = { {0} } }, .type = CLAY__SIZING_TYPE_GROW }),
+        .width = (Clay_SizingAxis { .size = { .minMax =  {} }, .type = CLAY__SIZING_TYPE_GROW }),
     };
 }
 
 Clay_Sizing ClayMan::expandY(){
     return {
-        .height = (Clay_SizingAxis { .size = { .minMax = { {0} } }, .type = CLAY__SIZING_TYPE_GROW }),
+        .height = (Clay_SizingAxis { .size = { .minMax = {} }, .type = CLAY__SIZING_TYPE_GROW }),
     };
 }
 
 Clay_Sizing ClayMan::expandXfixedY(const uint32_t h){
     return {
-        .width = (Clay_SizingAxis { .size = { .minMax = { {0} } }, .type = CLAY__SIZING_TYPE_GROW }),
+        .width = (Clay_SizingAxis { .size = { .minMax = {} }, .type = CLAY__SIZING_TYPE_GROW }),
         .height = (Clay_SizingAxis { .size = { .minMax = { (float)h, (float)h } }, .type = CLAY__SIZING_TYPE_FIXED }) 
     };
 }
@@ -172,7 +171,7 @@ Clay_Sizing ClayMan::expandXfixedY(const uint32_t h){
 Clay_Sizing ClayMan::expandYfixedX(const uint32_t w){
     return {
         .width = (Clay_SizingAxis { .size = { .minMax = { (float)w, (float)w } }, .type = CLAY__SIZING_TYPE_FIXED }),
-        .height = (Clay_SizingAxis { .size = { .minMax = { {0} } }, .type = CLAY__SIZING_TYPE_GROW })
+        .height = (Clay_SizingAxis { .size = { .minMax = {} }, .type = CLAY__SIZING_TYPE_GROW })
     };
 }
 
@@ -241,7 +240,10 @@ Clay_ElementId ClayMan::getClayElementId(const std::string& id){
 }
 
 Clay_String ClayMan::toClayString(const std::string& str){
-    return (Clay_String){ .length = (int32_t)str.size(), .chars = insertStringIntoArena(str)};
+    int32_t length = (int32_t)str.size();
+    const char* strchars = insertStringIntoArena(str);
+    Clay_String cs = { .length = (int32_t)str.size(), .chars = strchars};
+    return cs;
 }
 
 void ClayMan::applyElementConfigs(const Clay_ElementDeclaration& configs){

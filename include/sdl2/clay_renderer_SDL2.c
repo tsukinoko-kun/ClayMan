@@ -1,3 +1,7 @@
+#ifndef __STDC_VERSION__
+    #define __STDC_VERSION__  199901L
+#endif
+
 #include "../clay.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>

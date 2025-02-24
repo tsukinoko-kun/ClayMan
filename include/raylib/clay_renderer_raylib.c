@@ -1,7 +1,12 @@
+
+
+#ifndef __STDC_VERSION__
+    #define __STDC_VERSION__  199901L
+#endif
+
 #include "../clay.h"
 #include "raylib.h"
 #include "raymath.h"
-#include "stdint.h"
 #include "string.h"
 #include "stdio.h"
 #include "stdlib.h"

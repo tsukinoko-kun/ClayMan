@@ -3,7 +3,8 @@
 
 #include "include/clay.h"
 
-#include <iostream>
+#include <cstddef>
+// #include <iostream>
 #include <cstring>
 #include <chrono>
 #include <functional>
@@ -126,11 +127,10 @@ class ClayMan {
         //A self-contained text element, with no children. Takes a string literal.
         template<size_t N>
         void textElement(const char(&text)[N], const Clay_TextElementConfig textElementConfig){
+            Clay_String cs = toClayString(text);
             Clay__OpenTextElement(
-                toClayString(text), 
-                Clay__StoreTextElementConfig(
-                (Clay__Clay_TextElementConfigWrapper(textElementConfig)).wrapped
-                )
+                cs,
+                Clay__StoreTextElementConfig((Clay__Clay_TextElementConfigWrapper(textElementConfig)).wrapped)
             );
         }
 
@@ -185,6 +185,12 @@ class ClayMan {
         //Hashes string into a clay ID
         Clay_ElementId hashID(const std::string& id);
 
+        template<size_t N>
+        Clay_ElementId hashID(const char(&id)[N]){
+            return Clay__HashString(toClayString(id), 0, 0);
+        };
+
+
         //Gets clay internal left-mouse-button state this frame
         bool mousePressed();
 
@@ -212,7 +218,10 @@ class ClayMan {
         //Caches string literal into a string arena, then creates and returns a Clay_String
         template<size_t N>
         Clay_String toClayString(const char(&str)[N]){
-            return (Clay_String){ .length = static_cast<int32_t>((N - 1)), .chars = insertStringIntoArena(str)};
+            int32_t length = static_cast<int32_t>((N - 1));
+            const char* chars = insertStringIntoArena(str);
+            Clay_String cs = {.length = length, .chars = chars};
+            return cs;
         }
 
         //Gets current window width
@@ -255,6 +264,7 @@ class ClayMan {
         
         //Caches strings into string arena
         const char* insertStringIntoArena(const std::string& str) {
+
             size_t strSize = str.size();
 
             if (nextStringArenaIndex + strSize + 1 > maxStringArenaSize) {
@@ -263,8 +273,8 @@ class ClayMan {
 
             char* startPtr = &stringArena[nextStringArenaIndex];
 
-            for (char ch : str) {
-                stringArena[nextStringArenaIndex++] = ch;
+            for (size_t i = 0; i<strSize; i++) {
+                stringArena[nextStringArenaIndex++] = str[i];
             }
             stringArena[nextStringArenaIndex++] = ' ';
             return startPtr;
@@ -297,14 +307,14 @@ class ClayMan {
             long long microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
             frametime = microseconds;
             
-            if(framecount%180 == 0){
-                std::cout << "Layout completed in " << frametime << " microseconds." << std::endl;
-            }
+            // if(framecount%180 == 0){
+            //     std::cout << "Layout completed in " << frametime << " microseconds." << std::endl;
+            // }
             
-            if(microseconds > maxframetime) {
-                maxframetime = microseconds; 
-                std::cout << "New maximum layout time of " << maxframetime << " microseconds." << std::endl;
-            }
+            // if(microseconds > maxframetime) {
+            //     maxframetime = microseconds; 
+            //     std::cout << "New maximum layout time of " << maxframetime << " microseconds." << std::endl;
+            // }
         }
 
         //Checks params from element() for children callback lambda
