@@ -175,6 +175,7 @@ int main(int argc, char *argv[]) {
 
     SDL_Window *window = NULL;
     SDL_Renderer *renderer = NULL;
+    SDL_SetHint(SDL_HINT_LOGGING, "0");
     SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl"); //for antialiasing
     window = SDL_CreateWindow("SDL", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, clayMan.getWindowWidth(), clayMan.getWindowHeight(), SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 8); //for antialiasing
