@@ -42,6 +42,8 @@ freely, subject to the following restrictions:
     distribution.
 */
 
+
+
 //This class initializes Clay.h layout library, manages it's context, and provides functions for convenience
 class ClayMan {
     public:
@@ -54,10 +56,10 @@ class ClayMan {
         );
 
         //This constructor only creates the ClayMan object, you will need to create a Clay_Arena and call Clay_Initialize and Clay_SetMeasureTextFunction before using ClayMan functions
-        ClayMan(const uint32_t initialWidth, const uint32_t initialHeight):windowWidth(initialWidth), windowHeight(initialHeight){
-            if(windowWidth == 0){windowWidth = 1;}
-            if(windowHeight == 0){windowHeight = 1;}
-        }
+        ClayMan(const uint32_t initialWidth, const uint32_t initialHeight);
+        
+        //Copy constructor for catching duplications! Only one instance should be cteated then passed by reference (&)!
+        ClayMan(const ClayMan &clayMan);
 
         //Deconstructor
         ~ClayMan(){}

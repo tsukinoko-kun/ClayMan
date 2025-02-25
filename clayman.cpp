@@ -4,12 +4,15 @@
 #include "include/clay.h"
 #include "clayman.hpp"
 
+static bool claymaninstancehasbeencreated = false;
+
 ClayMan::ClayMan(
     const uint32_t initialWidth, 
     const uint32_t initialHeight, 
     Clay_Dimensions (*measureTextFunction)(Clay_StringSlice text, Clay_TextElementConfig *config, void* userData),
     void* measureTextUserData
 ):windowWidth(initialWidth), windowHeight(initialHeight) {
+    assert(claymaninstancehasbeencreated == false && "Only One Instance of ClayMan Should be Created!");
     if(windowWidth == 0){windowWidth = 1;}
     if(windowHeight == 0){windowHeight = 1;}
     uint64_t clayRequiredMemory = Clay_MinMemorySize();
@@ -21,6 +24,19 @@ ClayMan::ClayMan(
     }, (Clay_ErrorHandler) handleErrors);
 
     Clay_SetMeasureTextFunction(measureTextFunction, measureTextUserData);
+
+    claymaninstancehasbeencreated = true;
+}
+
+ClayMan::ClayMan(const uint32_t initialWidth, const uint32_t initialHeight):windowWidth(initialWidth), windowHeight(initialHeight){
+    assert(claymaninstancehasbeencreated == false && "Only One Instance of ClayMan Should be Created!");
+    if(windowWidth == 0){windowWidth = 1;}
+    if(windowHeight == 0){windowHeight = 1;}
+    claymaninstancehasbeencreated = true;
+}
+
+ClayMan::ClayMan(const ClayMan &clayMan){
+    assert(false && "Do not pass clayMan by value, pass by reference!");
 }
 
 void ClayMan::updateClayState(

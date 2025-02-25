@@ -85,6 +85,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]){
     SDL_GetWindowSize(state->window, &width, &height);
 
     state->clayMan = ClayMan(width, height, SDL_MeasureText, state->rendererData.fonts);
+
     state->width = width;
     state->height = height;
     state->clayMan.updateClayState(state->width, state->height, state->mouseX, state->mouseY, state->scrollX, state->scrollY, 0.01f, state->mouseDown); 
@@ -150,7 +151,6 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event){
 void myActions(void *appstate){
     AppState *state = (AppState*) appstate;
     ClayMan& clayMan = state->clayMan;
-
     if(clayMan.mousePressed()){
         if(clayMan.pointerOver("Button1")){
             theStrings[0] = "The Button Has Been Pressed!";
