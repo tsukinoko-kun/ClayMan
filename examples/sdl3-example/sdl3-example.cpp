@@ -2,6 +2,7 @@
 #include <SDL3/SDL_mouse.h>
 #include <SDL3/SDL_video.h>
 #include <cstddef>
+#include <vector>
 #define SDL_MAIN_USE_CALLBACKS 1
 #include <SDL3/SDL_main.h>
 #include <SDL3/SDL.h>
@@ -10,44 +11,33 @@
 #include "../../clayman.hpp"
 #include "../../include/SDL3/clay_renderer_SDL3.c"
 
-
-// SDL_Surface *sample_image;
-
-static inline Clay_Dimensions SDL_MeasureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData)
-{
-    TTF_Font **fonts = (TTF_Font **)userData;
-    TTF_Font *font = fonts[config->fontId];
-    int width, height;
-
-    if (!TTF_GetStringSize(font, text.chars, text.length, &width, &height)) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to measure text: %s", SDL_GetError());
-    }
-
-    return (Clay_Dimensions) { (float) width, (float) height };
-}
-
 typedef struct app_state {
-    SDL_Window *window;
+    ClayMan clayMan;
     Clay_SDL3RendererData rendererData;
-    size_t fontCount = 0;
-    ClayMan clayMan; // = ClayMan(800,600,SDL_MeasureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData));
-    int width = -1;
-    int height = -1;
+    Clay_RenderCommandArray renderCommands;
+    Clay_TextElementConfig textConfig;
+    Clay_TextElementConfig buttonTextConfig;
     float mouseX = 0;
     float mouseY = 0;
     float scrollX = 0;
     float scrollY = 0;
+    int width = -1;
+    int height = -1;
+    SDL_Surface *sample_image;
+    SDL_Window *window;
     bool mouseDown = false;
-
+    size_t fontCount = 0;
+    Uint64 NOW = 1;
+    Uint64 LAST = 0;
+    double deltaTime = 1;
 } AppState;
 
+std::vector<std::string> theStrings;
 
-
-SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
-{
+SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]){
     SDL_SetHint(SDL_HINT_LOGGING, "0");
-    SDL_SetHint(SDL_HINT_LOGGING, "1");
-    SDL_SetHint(SDL_HINT_LOGGING, "3");
+    // SDL_SetHint(SDL_HINT_LOGGING, "1");
+    // SDL_SetHint(SDL_HINT_LOGGING, "3");
 
     (void) argc;
     (void) argv;
@@ -89,7 +79,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     state->rendererData.fonts[0] = font;
     state->fontCount = 1;
 
-    // sample_image = IMG_Load("resources/sample.png");
+    state->sample_image = IMG_Load("resources/sample.png");
 
     int width, height;
     SDL_GetWindowSize(state->window, &width, &height);
@@ -99,12 +89,29 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     state->height = height;
     state->clayMan.updateClayState(state->width, state->height, state->mouseX, state->mouseY, state->scrollX, state->scrollY, 0.01f, state->mouseDown); 
     
+    state->textConfig = {
+        .textColor = {255,255,255,123},
+        .fontId = 0,
+        .fontSize = 16
+    };
+
+    state->buttonTextConfig = {
+        .textColor = {0,0,0,255},
+        .fontId = 0,
+        .fontSize = 16
+    };
+
+    state->NOW = SDL_GetPerformanceCounter();
+    state->LAST = 0;
+    state->deltaTime = 0;
+
+    theStrings.push_back("This is a string!");
+
     *appstate = state;
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
-{
+SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event){
     AppState *state = (AppState*) appstate;
     SDL_AppResult ret_val = SDL_APP_CONTINUE;
 
@@ -140,68 +147,112 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
     return ret_val;
 }
 
-SDL_AppResult SDL_AppIterate(void *appstate)
-{
+void myActions(void *appstate){
     AppState *state = (AppState*) appstate;
-    
-    state->clayMan.updateClayState(state->width, state->height, state->mouseX, state->mouseY, state->scrollX, state->scrollY, 0.01f, state->mouseDown); 
+    ClayMan& clayMan = state->clayMan;
 
-    state->clayMan.beginLayout();
+    if(clayMan.mousePressed()){
+        if(clayMan.pointerOver("Button1")){
+            theStrings[0] = "The Button Has Been Pressed!";
 
-    state->clayMan.element({
-        .backgroundColor = {123,123,123,255}
+        }else{
+            
+        }
+    }else{
+        if(clayMan.pointerOver("Button1")){
+            state->buttonTextConfig.textColor = {255,255,255,255};
+        }else{
+            state->buttonTextConfig.textColor = {0,0,0,255};
+        }
+    }
+}
+
+void myLayout(void *appstate){
+    AppState *state = (AppState*) appstate;
+    ClayMan& clayMan = state->clayMan;
+
+    clayMan.element({
+        .id = clayMan.hashID("OuterContainer"),
+        .layout = {
+            .sizing = clayMan.expandXY(),
+            .childGap = 10,
+            .childAlignment = {
+                .x = CLAY_ALIGN_X_CENTER,
+                .y = CLAY_ALIGN_Y_CENTER
+            },
+            .layoutDirection = CLAY_TOP_TO_BOTTOM,
+        },
+        .backgroundColor = {10,10,10,255}
     },[&](){
-        std::string thetext = "asdf asdf asdf asdf asdf";
-        state->clayMan.textElement(thetext, {
-            .textColor = {255,255,255,123},
-            .fontId = 0,
-            .fontSize = 16
+        clayMan.textElement(theStrings[0], state->textConfig);
+        clayMan.element({
+            .id = clayMan.hashID("ImageContainer"),
+            .layout = {
+                .sizing = clayMan.fixedSize(23, 42)
+            }
+        }, [&](){
+            clayMan.element({
+                .id = clayMan.hashID("TheImage"),
+                .layout = {
+                    .sizing = clayMan.expandXY()
+                },
+                .image = {
+                    .imageData = state->sample_image,
+                    .sourceDimensions = {23,42}
+                }
+            });
+        });
+        clayMan.element({
+            .id = clayMan.hashID("Button1"),
+            .layout = {
+                .padding = clayMan.padAll(6)
+            },
+            .backgroundColor = {150, 150, 150, 150}
+        },[&](){
+            clayMan.textElement("BUTTON", state->buttonTextConfig);
         });
     });
+}
 
-    Clay_RenderCommandArray render_commands = state->clayMan.endLayout();
+
+SDL_AppResult SDL_AppIterate(void *appstate){
+    AppState *state = (AppState*) appstate;
+    
+    state->LAST = state->NOW;
+    state->NOW = SDL_GetPerformanceCounter();
+    state->deltaTime = (double)((state->NOW - state->LAST)*1000 / (double)SDL_GetPerformanceFrequency() );
+
+    state->clayMan.updateClayState(state->width, state->height, state->mouseX, state->mouseY, state->scrollX, state->scrollY, state->deltaTime, state->mouseDown); 
+
+    myActions(state);
+
+    state->clayMan.beginLayout();
+    myLayout(state);
+    state->renderCommands = state->clayMan.endLayout();
 
     SDL_SetRenderDrawColor(state->rendererData.renderer, 0, 0, 0, 255);
     SDL_RenderClear(state->rendererData.renderer);
-
-    SDL_Clay_RenderClayCommands(&state->rendererData, &render_commands);
-
+    SDL_Clay_RenderClayCommands(&state->rendererData, &state->renderCommands);
     SDL_RenderPresent(state->rendererData.renderer);
 
     return SDL_APP_CONTINUE;
 }
 
-void SDL_AppQuit(void *appstate, SDL_AppResult result)
-{
-    (void) result;
-
-    if (result != SDL_APP_SUCCESS) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Application failed to run");
-    }
+void SDL_AppQuit(void *appstate, SDL_AppResult result){
+    (void) result; if (result != SDL_APP_SUCCESS) {SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Application failed to run");}
 
     AppState *state = (AppState*) appstate;
 
     if (state) {
-        if (state->rendererData.renderer)
-            SDL_DestroyRenderer(state->rendererData.renderer);
-
-        if (state->window)
-            SDL_DestroyWindow(state->window);
-
+        if (state->rendererData.renderer) SDL_DestroyRenderer(state->rendererData.renderer);
+        if (state->window) SDL_DestroyWindow(state->window);
         if (state->rendererData.fonts) {
-           
-            for (size_t i = 0; i < state->fontCount; i++) {
-                TTF_CloseFont(state->rendererData.fonts[i]);
-            }
-
-
+            for (size_t i = 0; i < state->fontCount; i++) {TTF_CloseFont(state->rendererData.fonts[i]);}
             SDL_free(state->rendererData.fonts);
         }
-
-        if (state->rendererData.textEngine)
-            TTF_DestroyRendererTextEngine(state->rendererData.textEngine);
-
+        if (state->rendererData.textEngine) TTF_DestroyRendererTextEngine(state->rendererData.textEngine);
         SDL_free(state);
     }
+
     TTF_Quit();
 }

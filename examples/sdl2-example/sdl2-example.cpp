@@ -3,7 +3,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
-//todo images
+SDL_Surface *sample_image;
 
 //User layout callback function, do not call Clay_BeginLayout() or Clay_EndLayout()
 void myLayout(ClayMan& clayMan){
@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
         .font = font,
     };
 
-    // sample_image = IMG_Load("resources/sample.png");
+    sample_image = IMG_Load("resources/sample.png");
 
     int windowWidth = 800;
     int windowHeight = 600;
@@ -205,36 +205,18 @@ int main(int argc, char *argv[]) {
         NOW = SDL_GetPerformanceCounter();
         deltaTime = (double)((NOW - LAST)*1000 / (double)SDL_GetPerformanceFrequency() );
 
-        int mouseX = 0;
-        int mouseY = 0;
+        int mouseX = 0, mouseY = 0;
         Uint32 mouseState = SDL_GetMouseState(&mouseX, &mouseY);
         SDL_GetWindowSize(window, &windowWidth, &windowHeight);
 
-        clayMan.updateClayState(
-            windowWidth,
-            windowHeight,
-            mouseX,
-            mouseY,
-            scrollDelta.x,
-            scrollDelta.y,
-            deltaTime,
-            mouseState & SDL_BUTTON(1)
-        );
-
+        clayMan.updateClayState(windowWidth, windowHeight, mouseX, mouseY, scrollDelta.x, scrollDelta.y, deltaTime, mouseState & SDL_BUTTON(1));
         clayMan.beginLayout();
         myLayout(clayMan);
         Clay_RenderCommandArray renderCommands = clayMan.endLayout();
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
-
-        // SDL_Texture* aaTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, clayMan.getWindowWidth() * 10, clayMan.getWindowHeight() * 10);
-        // SDL_SetRenderTarget(renderer, aaTexture);
         Clay_SDL2_Render(renderer, renderCommands, fonts);
-        // SDL_SetRenderTarget(renderer, NULL);
-        // SDL_Rect destRect = { 0, 0, clayMan.getWindowWidth(), clayMan.getWindowHeight() };
-        // SDL_RenderCopy(renderer, aaTexture, NULL, &destRect);
-
         SDL_RenderPresent(renderer);
     }
 
