@@ -1,12 +1,13 @@
 # ClayMan
 
-### [ClayMan](https://github.com/TimothyHoytBSME/ClayMan) is a C++ wrapper library for the `clay.h` library found [here](https://github.com/nicbarker/clay/). This library (as well as Clay), is a work in progress, but is ready to be used.
+### [ClayMan](https://github.com/TimothyHoytBSME/ClayMan) is a C++ wrapper library for the `clay.h` library found [here](https://github.com/nicbarker/clay/). This library (as well as Clay), is a work in progress, but is ready to be used. There is an active cummunity on [Discord](https://discord.com/channels/1291501630973415474/1291501631510417470), any direct discussion about ClayMan can be found in the [#bindings-cpp channel](https://discord.com/channels/1291501630973415474/1338700149001818145).
 
 - [About Clay](#about-clay)
 - [About ClayMan](#about-clayman)
 - [Closing Elements](#closing-elements)
 - [Strings](#strings)
-- [How to use ClayMan (with Raylib renderer)](#how-to-use-clayman-with-raylib-renderer)
+- [How To Use ClayMan (With Raylib Renderer)](#how-to-use-clayman-with-raylib-renderer)
+- [Examples And Other Renderers](#examples-and-other-renderers)
 - [Events](#events)
 - [Element Configuration](#element-parameters)
 - [Advanced Use](#advanced-use)
@@ -186,8 +187,8 @@ ClayMan.openElement({.id = clayMan.hashID("Element2")});{
 
 **NOTE**: There is currently a 100000 char limit for the internal string arena, this includes all characters for all strings and string literals passed into ClayMan functions each frame.
 
-## How to use ClayMan (with Raylib renderer)
-To use this library in your project, simply copy the `clayman.hpp` header, the `clayman.cpp` source file, as well as the `include` folder (which has the compatible version of `clay.h` as well as the Raylib renderer) into your working directory. Then, in your project:
+## How To Use ClayMan (With Raylib Renderer)
+To use this library in your project, simply copy the `clayman.hpp` header, the `clayman.cpp` source file, as well as the [include](https://github.com/TimothyHoytBSME/ClayMan/tree/main/include) folder (which has the compatible version of `clay.h` as well as the all renderers) into your working directory. Then, in your project do the following, changing the include paths as needed for your file structure:
 
 ```cpp
 #include "clayman.hpp"
@@ -275,7 +276,8 @@ int main(void) {
 
 ```
 
-**NOTE**: To use a different renderer, simply replace all of the Raylib related parts with the appropriate counter-parts (like the SDL2 renderer).
+## Examples And Other Renderers
+To use a different renderer, simply replace all of the Raylib related parts with the appropriate counter-parts (like the SDL2 renderer). For your conveneice, the above example and several other examples are available in the [examples](https://github.com/TimothyHoytBSME/ClayMan/tree/main/examples) directory to serve as templates and to show how to properly set up and use ClayMan in different scenarios. The `full-example` shows how to mix the different element styles, while the rest all use the lambda method iwth various renderers and use-cases. ClayMan comes with 3 different renderers: Raylib, SDL2, and SDL3. The layout code in each example is independant of the renderer, so, apart from user-variables in the layout, layouts can be swapped between various render setups, but renderer setups vary widely, and change the overall structure of each example to some degree.
 
 ## Events
 The Clay library does not handle events. It does, however, have some on-hover and related functionality.
