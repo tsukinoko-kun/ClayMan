@@ -8,7 +8,7 @@
 #include <cstring>
 #include <chrono>
 #include <functional>
-
+#include <cassert>
 /*
 
 ClayMan Repo: https://github.com/TimothyHoytBSME/ClayMan
@@ -218,6 +218,7 @@ class ClayMan {
         //Caches string literal into a string arena, then creates and returns a Clay_String
         template<size_t N>
         Clay_String toClayString(const char(&str)[N]){
+            assert(str[N - 1] == '\0' && "String must be null terminated");
             int32_t length = static_cast<int32_t>((N - 1));
             const char* chars = insertStringIntoArena(str);
             Clay_String cs = {.length = length, .chars = chars};
