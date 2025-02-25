@@ -24,8 +24,8 @@ ClayMan::ClayMan(
 }
 
 void ClayMan::updateClayState(
-    const uint32_t initialWidth, 
-    const uint32_t initialHeight, 
+    const uint32_t width, 
+    const uint32_t height, 
     const float mouseX, 
     const float mouseY, 
     const float scrollDeltaX, 
@@ -33,8 +33,8 @@ void ClayMan::updateClayState(
     const float frameTime, 
     const bool leftButtonDown
 ){
-    windowWidth = initialWidth;
-    windowHeight = initialHeight;
+    windowWidth = width;
+    windowHeight = height;
     if(windowWidth == 0){windowWidth = 1;}
     if(windowHeight == 0){windowHeight = 1;}
     Clay_SetLayoutDimensions((Clay_Dimensions) {

@@ -64,8 +64,8 @@ class ClayMan {
 
         //Takes mouse, window, and time information and passes it to Clay context
         void updateClayState(
-            const uint32_t initialWidth, 
-            const uint32_t initialHeight, 
+            const uint32_t width, 
+            const uint32_t height, 
             const float mouseX, 
             const float mouseY, 
             const float scrollDeltaX, 
