@@ -1,3 +1,4 @@
+//old
 #ifndef __STDC_VERSION__
     #define __STDC_VERSION__  199901L
 #endif
@@ -242,10 +243,10 @@ static void SDL_Clay_RenderClayCommands(Clay_SDL3RendererData *rendererData, Cla
             case CLAY_RENDER_COMMAND_TYPE_SCISSOR_START: {
                 Clay_BoundingBox boundingBox = rcmd->boundingBox;
                 currentClippingRectangle = (SDL_Rect) {
-                    .x = (int)boundingBox.x,
-                    .y = (int)boundingBox.y,
-                    .w = (int)boundingBox.width,
-                    .h = (int)boundingBox.height,
+                        .x = (int)boundingBox.x,
+                        .y = (int)boundingBox.y,
+                        .w = (int)boundingBox.width,
+                        .h = (int)boundingBox.height,
                 };
                 SDL_SetRenderClipRect(rendererData->renderer, &currentClippingRectangle);
                 break;
@@ -268,6 +269,7 @@ static void SDL_Clay_RenderClayCommands(Clay_SDL3RendererData *rendererData, Cla
         }
     }
 }
+
 
 static inline Clay_Dimensions SDL_MeasureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData){
     TTF_Font **fonts = (TTF_Font **)userData;

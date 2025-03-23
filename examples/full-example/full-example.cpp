@@ -152,7 +152,7 @@ struct AppConfigs{
     };
     
     uint16_t borderWidth = 4;
-    Clay_BorderWidth border = (Clay_BorderWidth){borderWidth,borderWidth,borderWidth,borderWidth,0};
+    Clay_BorderWidth border = (Clay_BorderWidth){4,4,4,4,0};
 
     private:
         //Internal singleton constructor
@@ -175,7 +175,7 @@ struct ReusableElements{
             {
                 .layout = appConfigs.headerButtonLayoutConfig,
                 .backgroundColor = appData.colors.gray_light, 
-                .cornerRadius = 5,
+                .cornerRadius = {5,5,5,5},
             },
             [&]{ //Children in this lambda
                 clayMan.textElement(text, appConfigs.headerTextConfig);
@@ -223,7 +223,7 @@ struct Popup{
             .id = CLAY_ID("PopUpButton"),
             .layout = appConfigs.dropdownItemLayoutConfig,
         }){
-            Clay_OnHover(HandlePopupButtonHover, {0});
+            Clay_OnHover(HandlePopupButtonHover, 0);
             CLAY_TEXT(CLAY_STRING("PopUp"), CLAY_TEXT_CONFIG(appConfigs.headerTextConfig));
         }
     }
@@ -271,10 +271,10 @@ struct Popup{
                                     {
                                         .id = CLAY_ID("CloseImage"),
                                         .layout = {.sizing = {
-                                            .width = (Clay_SizingAxis { .size = { .minMax = { {0} } }, .type = CLAY__SIZING_TYPE_GROW }), //expand x
-                                            .height = (Clay_SizingAxis { .size = { .minMax = { {0} } }, .type = CLAY__SIZING_TYPE_GROW }) //expand y
+                                            .width = (Clay_SizingAxis { .size = { .minMax = { 0 } }, .type = CLAY__SIZING_TYPE_GROW }), //expand x
+                                            .height = (Clay_SizingAxis { .size = { .minMax = { 0 } }, .type = CLAY__SIZING_TYPE_GROW }) //expand y
                                         }},
-                                        .cornerRadius = 8,
+                                        .cornerRadius = {8,8,8,8},
                                         .image = {
                                                 .imageData = Clay_Hovered()? &appData.closeWhiteTexture : &appData.closeBlackTexture,
                                                 .sourceDimensions = {64, 64}
@@ -325,7 +325,7 @@ void myLayout(){
                     .id = clayMan.hashID("HeaderBar"),
                     .layout = appConfigs.headerLayoutConfig,
                     .backgroundColor = appData.colors.gray_med,
-                    .cornerRadius = 8
+                    .cornerRadius = {8,8,8,8}
                 },
                 [&]{
                     clayMan.element(
@@ -333,7 +333,7 @@ void myLayout(){
                             .id = clayMan.hashID("FileButton"),
                             .layout = {.padding = clayMan.padXY(16, 8)},
                             .backgroundColor = appData.colors.gray_light,
-                            .cornerRadius = 5
+                            .cornerRadius = {5,5,5,5}
                         },
                         [&]{
                             clayMan.textElement("File", appConfigs.headerTextConfig);
@@ -356,7 +356,7 @@ void myLayout(){
                                             {
                                                 .layout = appConfigs.dropdownLayoutConfig,
                                                 .backgroundColor = appData.colors.gray_dark2,
-                                                .cornerRadius = 8
+                                                .cornerRadius = {8,8,8,8}
                                             },
                                             [&]{
                                                 popup.popUpButton();
@@ -410,7 +410,7 @@ void myLayout(){
                                         {
                                             .layout = appConfigs.sidebarButtonLayout,
                                             .backgroundColor = appData.colors.gray_light2,
-                                            .cornerRadius = 8
+                                            .cornerRadius = {8,8,8,8}
                                         },
                                         [&]{
                                             clayMan.textElement(appData.documents[i].title, appConfigs.sidebarTextConfig);
@@ -428,7 +428,7 @@ void myLayout(){
                                             .id = clayMan.hashID(docID),
                                             .layout = appConfigs.sidebarButtonLayout,
                                             .backgroundColor = overButton? appData.colors.gray_light2_alpha : (Clay_Color){0,0,0,0},
-                                            .cornerRadius = 8
+                                            .cornerRadius = {8,8,8,8}
                                         },
                                         [&]{ 
                                             clayMan.textElement(appData.documents[i].title, appConfigs.sidebarTextConfig);

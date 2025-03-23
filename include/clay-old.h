@@ -1,4 +1,4 @@
-// VERSION: 0.13
+// VERSION: 0.12
 
 /*
     NOTE: In order to use this library you must define
@@ -42,12 +42,6 @@
 #define CLAY_WASM_EXPORT(null)
 #endif
 
-#ifdef CLAY_DLL
-#define CLAY_DLL_EXPORT __declspec(dllexport) __stdcall
-#else
-#define CLAY_DLL_EXPORT
-#endif
-
 // Public Macro API ------------------------
 
 #define CLAY__MAX(x, y) (((x) > (y)) ? (x) : (y))
@@ -71,25 +65,13 @@
 
 #define CLAY_SIZING_PERCENT(percentOfParent) (CLAY__INIT(Clay_SizingAxis) { .size = { .percent = (percentOfParent) }, .type = CLAY__SIZING_TYPE_PERCENT })
 
-// Note: If a compile error led you here, you might be trying to use CLAY_ID with something other than a string literal. To construct an ID with a dynamic string, use CLAY_SID instead.
 #define CLAY_ID(label) CLAY_IDI(label, 0)
 
-#define CLAY_SID(label) CLAY_SIDI(label, 0)
+#define CLAY_IDI(label, index) Clay__HashString(CLAY_STRING(label), index, 0)
 
-// Note: If a compile error led you here, you might be trying to use CLAY_IDI with something other than a string literal. To construct an ID with a dynamic string, use CLAY_SIDI instead.
-#define CLAY_IDI(label, index) CLAY_SIDI(CLAY_STRING(label), index)
-
-#define CLAY_SIDI(label, index) Clay__HashString(label, index, 0)
-
-// Note: If a compile error led you here, you might be trying to use CLAY_ID_LOCAL with something other than a string literal. To construct an ID with a dynamic string, use CLAY_SID_LOCAL instead.
 #define CLAY_ID_LOCAL(label) CLAY_IDI_LOCAL(label, 0)
 
-#define CLAY_SID_LOCAL(label) CLAY_SIDI_LOCAL(label, 0)
-
-// Note: If a compile error led you here, you might be trying to use CLAY_IDI_LOCAL with something other than a string literal. To construct an ID with a dynamic string, use CLAY_SIDI_LOCAL instead.
-#define CLAY_IDI_LOCAL(label, index) CLAY_SIDI_LOCAL(CLAY_STRING(label), index)
-
-#define CLAY_SIDI_LOCAL(label, index) Clay__HashString(label, index, Clay__GetParentElementId())
+#define CLAY_IDI_LOCAL(label, index) Clay__HashString(CLAY_STRING(label), index, Clay__GetParentElementId())
 
 #define CLAY__STRING_LENGTH(s) ((sizeof(s) / sizeof((s)[0])) - sizeof((s)[0]))
 
@@ -101,10 +83,6 @@
 #define CLAY_STRING_CONST(string) { .length = CLAY__STRING_LENGTH(CLAY__ENSURE_STRING_LITERAL(string)), .chars = (string) }
 
 static uint8_t CLAY__ELEMENT_DEFINITION_LATCH;
-
-// GCC marks the above CLAY__ELEMENT_DEFINITION_LATCH as an unused variable for files that include clay.h but don't declare any layout
-// This is to suppress that warning
-static inline void Clay__SuppressUnusedLatchDefinitionVariableWarning(void) { (void) CLAY__ELEMENT_DEFINITION_LATCH; }
 
 // Publicly visible layout element macros -----------------------------------------------------
 
@@ -270,7 +248,7 @@ typedef CLAY_PACKED_ENUM {
     CLAY_ALIGN_Y_TOP,
     // Aligns child elements to the bottom of this element, offset by padding.width.bottom
     CLAY_ALIGN_Y_BOTTOM,
-    // Aligns child elements vertically to the center of this element
+    // Aligns child elements vertiically to the center of this element
     CLAY_ALIGN_Y_CENTER,
 } Clay_LayoutAlignmentY;
 
@@ -361,8 +339,6 @@ typedef CLAY_PACKED_ENUM {
 
 // Controls various functionality related to text elements.
 typedef struct {
-    // A pointer that will be transparently passed through to the resulting render command.
-    void *userData;
     // The RGBA color of the font to render, conventionally specified as 0-255.
     Clay_Color textColor;
     // An integer transparently passed to Clay_MeasureText to identify the font to use.
@@ -793,103 +769,102 @@ typedef struct {
 // Public API functions ------------------------------------------
 
 // Returns the size, in bytes, of the minimum amount of memory Clay requires to operate at its current settings.
-CLAY_DLL_EXPORT uint32_t Clay_MinMemorySize(void);
+uint32_t Clay_MinMemorySize(void);
 // Creates an arena for clay to use for its internal allocations, given a certain capacity in bytes and a pointer to an allocation of at least that size.
 // Intended to be used with Clay_MinMemorySize in the following way:
 // uint32_t minMemoryRequired = Clay_MinMemorySize();
 // Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(minMemoryRequired, malloc(minMemoryRequired));
-CLAY_DLL_EXPORT Clay_Arena Clay_CreateArenaWithCapacityAndMemory(size_t capacity, void *memory);
+Clay_Arena Clay_CreateArenaWithCapacityAndMemory(uint32_t capacity, void *memory);
 // Sets the state of the "pointer" (i.e. the mouse or touch) in Clay's internal data. Used for detecting and responding to mouse events in the debug view,
 // as well as for Clay_Hovered() and scroll element handling.
-CLAY_DLL_EXPORT void Clay_SetPointerState(Clay_Vector2 position, bool pointerDown);
+void Clay_SetPointerState(Clay_Vector2 position, bool pointerDown);
 // Initialize Clay's internal arena and setup required data before layout can begin. Only needs to be called once.
 // - arena can be created using Clay_CreateArenaWithCapacityAndMemory()
 // - layoutDimensions are the initial bounding dimensions of the layout (i.e. the screen width and height for a full screen layout)
 // - errorHandler is used by Clay to inform you if something has gone wrong in configuration or layout.
-CLAY_DLL_EXPORT Clay_Context* Clay_Initialize(Clay_Arena arena, Clay_Dimensions layoutDimensions, Clay_ErrorHandler errorHandler);
+Clay_Context* Clay_Initialize(Clay_Arena arena, Clay_Dimensions layoutDimensions, Clay_ErrorHandler errorHandler);
 // Returns the Context that clay is currently using. Used when using multiple instances of clay simultaneously.
-CLAY_DLL_EXPORT Clay_Context* Clay_GetCurrentContext(void);
+Clay_Context* Clay_GetCurrentContext(void);
 // Sets the context that clay will use to compute the layout.
 // Used to restore a context saved from Clay_GetCurrentContext when using multiple instances of clay simultaneously.
-CLAY_DLL_EXPORT void Clay_SetCurrentContext(Clay_Context* context);
+void Clay_SetCurrentContext(Clay_Context* context);
 // Updates the state of Clay's internal scroll data, updating scroll content positions if scrollDelta is non zero, and progressing momentum scrolling.
 // - enableDragScrolling when set to true will enable mobile device like "touch drag" scroll of scroll containers, including momentum scrolling after the touch has ended.
 // - scrollDelta is the amount to scroll this frame on each axis in pixels.
 // - deltaTime is the time in seconds since the last "frame" (scroll update)
-CLAY_DLL_EXPORT void Clay_UpdateScrollContainers(bool enableDragScrolling, Clay_Vector2 scrollDelta, float deltaTime);
+void Clay_UpdateScrollContainers(bool enableDragScrolling, Clay_Vector2 scrollDelta, float deltaTime);
 // Updates the layout dimensions in response to the window or outer container being resized.
-CLAY_DLL_EXPORT void Clay_SetLayoutDimensions(Clay_Dimensions dimensions);
+void Clay_SetLayoutDimensions(Clay_Dimensions dimensions);
 // Called before starting any layout declarations.
-CLAY_DLL_EXPORT void Clay_BeginLayout(void);
+void Clay_BeginLayout(void);
 // Called when all layout declarations are finished.
 // Computes the layout and generates and returns the array of render commands to draw.
-CLAY_DLL_EXPORT Clay_RenderCommandArray Clay_EndLayout(void);
+Clay_RenderCommandArray Clay_EndLayout(void);
 // Calculates a hash ID from the given idString.
 // Generally only used for dynamic strings when CLAY_ID("stringLiteral") can't be used.
-CLAY_DLL_EXPORT Clay_ElementId Clay_GetElementId(Clay_String idString);
+Clay_ElementId Clay_GetElementId(Clay_String idString);
 // Calculates a hash ID from the given idString and index.
 // - index is used to avoid constructing dynamic ID strings in loops.
 // Generally only used for dynamic strings when CLAY_IDI("stringLiteral", index) can't be used.
-CLAY_DLL_EXPORT Clay_ElementId Clay_GetElementIdWithIndex(Clay_String idString, uint32_t index);
+Clay_ElementId Clay_GetElementIdWithIndex(Clay_String idString, uint32_t index);
 // Returns layout data such as the final calculated bounding box for an element with a given ID.
 // The returned Clay_ElementData contains a `found` bool that will be true if an element with the provided ID was found.
 // This ID can be calculated either with CLAY_ID() for string literal IDs, or Clay_GetElementId for dynamic strings.
-CLAY_DLL_EXPORT Clay_ElementData Clay_GetElementData(Clay_ElementId id);
+Clay_ElementData Clay_GetElementData(Clay_ElementId id);
 // Returns true if the pointer position provided by Clay_SetPointerState is within the current element's bounding box.
 // Works during element declaration, e.g. CLAY({ .backgroundColor = Clay_Hovered() ? BLUE : RED });
-CLAY_DLL_EXPORT bool Clay_Hovered(void);
+bool Clay_Hovered(void);
 // Bind a callback that will be called when the pointer position provided by Clay_SetPointerState is within the current element's bounding box.
 // - onHoverFunction is a function pointer to a user defined function.
 // - userData is a pointer that will be transparently passed through when the onHoverFunction is called.
-CLAY_DLL_EXPORT void Clay_OnHover(void (*onHoverFunction)(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData), intptr_t userData);
+void Clay_OnHover(void (*onHoverFunction)(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData), intptr_t userData);
 // An imperative function that returns true if the pointer position provided by Clay_SetPointerState is within the element with the provided ID's bounding box.
 // This ID can be calculated either with CLAY_ID() for string literal IDs, or Clay_GetElementId for dynamic strings.
-CLAY_DLL_EXPORT bool Clay_PointerOver(Clay_ElementId elementId);
+bool Clay_PointerOver(Clay_ElementId elementId);
 // Returns data representing the state of the scrolling element with the provided ID.
 // The returned Clay_ScrollContainerData contains a `found` bool that will be true if a scroll element was found with the provided ID.
 // An imperative function that returns true if the pointer position provided by Clay_SetPointerState is within the element with the provided ID's bounding box.
 // This ID can be calculated either with CLAY_ID() for string literal IDs, or Clay_GetElementId for dynamic strings.
-CLAY_DLL_EXPORT Clay_ScrollContainerData Clay_GetScrollContainerData(Clay_ElementId id);
+Clay_ScrollContainerData Clay_GetScrollContainerData(Clay_ElementId id);
 // Binds a callback function that Clay will call to determine the dimensions of a given string slice.
 // - measureTextFunction is a user provided function that adheres to the interface Clay_Dimensions (Clay_StringSlice text, Clay_TextElementConfig *config, void *userData);
 // - userData is a pointer that will be transparently passed through when the measureTextFunction is called.
-CLAY_DLL_EXPORT void Clay_SetMeasureTextFunction(Clay_Dimensions (*measureTextFunction)(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData), void *userData);
+void Clay_SetMeasureTextFunction(Clay_Dimensions (*measureTextFunction)(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData), void *userData);
 // Experimental - Used in cases where Clay needs to integrate with a system that manages its own scrolling containers externally.
 // Please reach out if you plan to use this function, as it may be subject to change.
-CLAY_DLL_EXPORT void Clay_SetQueryScrollOffsetFunction(Clay_Vector2 (*queryScrollOffsetFunction)(uint32_t elementId, void *userData), void *userData);
+void Clay_SetQueryScrollOffsetFunction(Clay_Vector2 (*queryScrollOffsetFunction)(uint32_t elementId, void *userData), void *userData);
 // A bounds-checked "get" function for the Clay_RenderCommandArray returned from Clay_EndLayout().
-CLAY_DLL_EXPORT Clay_RenderCommand * Clay_RenderCommandArray_Get(Clay_RenderCommandArray* array, int32_t index);
+Clay_RenderCommand * Clay_RenderCommandArray_Get(Clay_RenderCommandArray* array, int32_t index);
 // Enables and disables Clay's internal debug tools.
 // This state is retained and does not need to be set each frame.
-CLAY_DLL_EXPORT void Clay_SetDebugModeEnabled(bool enabled);
+void Clay_SetDebugModeEnabled(bool enabled);
 // Returns true if Clay's internal debug tools are currently enabled.
-CLAY_DLL_EXPORT bool Clay_IsDebugModeEnabled(void);
+bool Clay_IsDebugModeEnabled(void);
 // Enables and disables visibility culling. By default, Clay will not generate render commands for elements whose bounding box is entirely outside the screen.
-CLAY_DLL_EXPORT void Clay_SetCullingEnabled(bool enabled);
+void Clay_SetCullingEnabled(bool enabled);
 // Returns the maximum number of UI elements supported by Clay's current configuration.
-CLAY_DLL_EXPORT int32_t Clay_GetMaxElementCount(void);
+int32_t Clay_GetMaxElementCount(void);
 // Modifies the maximum number of UI elements supported by Clay's current configuration.
 // This may require reallocating additional memory, and re-calling Clay_Initialize();
-CLAY_DLL_EXPORT void Clay_SetMaxElementCount(int32_t maxElementCount);
+void Clay_SetMaxElementCount(int32_t maxElementCount);
 // Returns the maximum number of measured "words" (whitespace seperated runs of characters) that Clay can store in its internal text measurement cache.
-CLAY_DLL_EXPORT int32_t Clay_GetMaxMeasureTextCacheWordCount(void);
+int32_t Clay_GetMaxMeasureTextCacheWordCount(void);
 // Modifies the maximum number of measured "words" (whitespace seperated runs of characters) that Clay can store in its internal text measurement cache.
 // This may require reallocating additional memory, and re-calling Clay_Initialize();
-CLAY_DLL_EXPORT void Clay_SetMaxMeasureTextCacheWordCount(int32_t maxMeasureTextCacheWordCount);
+void Clay_SetMaxMeasureTextCacheWordCount(int32_t maxMeasureTextCacheWordCount);
 // Resets Clay's internal text measurement cache, useful if memory to represent strings is being re-used.
 // Similar behaviour can be achieved on an individual text element level by using Clay_TextElementConfig.hashStringContents
-CLAY_DLL_EXPORT void Clay_ResetMeasureTextCache(void);
+void Clay_ResetMeasureTextCache(void);
 
 // Internal API functions required by macros ----------------------
 
-CLAY_DLL_EXPORT void Clay__OpenElement(void);
-CLAY_DLL_EXPORT void Clay__ConfigureOpenElement(const Clay_ElementDeclaration config);
-CLAY_DLL_EXPORT void Clay__ConfigureOpenElementPtr(const Clay_ElementDeclaration *config);
-CLAY_DLL_EXPORT void Clay__CloseElement(void);
-CLAY_DLL_EXPORT Clay_ElementId Clay__HashString(Clay_String key, uint32_t offset, uint32_t seed);
-CLAY_DLL_EXPORT void Clay__OpenTextElement(Clay_String text, Clay_TextElementConfig *textConfig);
-CLAY_DLL_EXPORT Clay_TextElementConfig *Clay__StoreTextElementConfig(Clay_TextElementConfig config);
-CLAY_DLL_EXPORT uint32_t Clay__GetParentElementId(void);
+void Clay__OpenElement(void);
+void Clay__ConfigureOpenElement(const Clay_ElementDeclaration config);
+void Clay__CloseElement(void);
+Clay_ElementId Clay__HashString(Clay_String key, uint32_t offset, uint32_t seed);
+void Clay__OpenTextElement(Clay_String text, Clay_TextElementConfig *textConfig);
+Clay_TextElementConfig *Clay__StoreTextElementConfig(Clay_TextElementConfig config);
+uint32_t Clay__GetParentElementId(void);
 
 extern Clay_Color Clay__debugViewHighlightColor;
 extern uint32_t Clay__debugViewWidth;
@@ -1156,7 +1131,6 @@ CLAY__ARRAY_DEFINE(Clay__MeasuredWord, Clay__MeasuredWordArray)
 typedef struct {
     Clay_Dimensions unwrappedDimensions;
     int32_t measuredWordsStartIndex;
-    float minWidth;
     bool containsNewlines;
     // Hash map data
     uint32_t id;
@@ -1505,7 +1479,6 @@ Clay__MeasureTextCacheItem *Clay__MeasureTextCached(Clay_String *text, Clay_Text
         if (current == ' ' || current == '\n') {
             int32_t length = end - start;
             Clay_Dimensions dimensions = Clay__MeasureText(CLAY__INIT(Clay_StringSlice) { .length = length, .chars = &text->chars[start], .baseChars = text->chars }, config, context->measureTextUserData);
-            measured->minWidth = CLAY__MAX(dimensions.width, measured->minWidth);
             measuredHeight = CLAY__MAX(measuredHeight, dimensions.height);
             if (current == ' ') {
                 dimensions.width += spaceWidth;
@@ -1531,7 +1504,6 @@ Clay__MeasureTextCacheItem *Clay__MeasureTextCached(Clay_String *text, Clay_Text
         Clay__AddMeasuredWord(CLAY__INIT(Clay__MeasuredWord) { .startOffset = start, .length = end - start, .width = dimensions.width, .next = -1 }, previousWord);
         lineWidth += dimensions.width;
         measuredHeight = CLAY__MAX(measuredHeight, dimensions.height);
-        measured->minWidth = CLAY__MAX(dimensions.width, measured->minWidth);
     }
     measuredWidth = CLAY__MAX(lineWidth, measuredWidth);
 
@@ -1661,30 +1633,24 @@ void Clay__CloseElement(void) {
             elementHasScrollVertical = config->config.scrollElementConfig->vertical;
             context->openClipElementStack.length--;
             break;
-        } else if (config->type == CLAY__ELEMENT_CONFIG_TYPE_FLOATING) {
-            context->openClipElementStack.length--;
         }
     }
-
-    float leftRightPadding = (float)(layoutConfig->padding.left + layoutConfig->padding.right);
-    float topBottomPadding = (float)(layoutConfig->padding.top + layoutConfig->padding.bottom);
 
     // Attach children to the current open element
     openLayoutElement->childrenOrTextContent.children.elements = &context->layoutElementChildren.internalArray[context->layoutElementChildren.length];
     if (layoutConfig->layoutDirection == CLAY_LEFT_TO_RIGHT) {
-        openLayoutElement->dimensions.width = leftRightPadding;
-        openLayoutElement->minDimensions.width = leftRightPadding;
+        openLayoutElement->dimensions.width = (float)(layoutConfig->padding.left + layoutConfig->padding.right);
         for (int32_t i = 0; i < openLayoutElement->childrenOrTextContent.children.length; i++) {
             int32_t childIndex = Clay__int32_tArray_GetValue(&context->layoutElementChildrenBuffer, (int)context->layoutElementChildrenBuffer.length - openLayoutElement->childrenOrTextContent.children.length + i);
             Clay_LayoutElement *child = Clay_LayoutElementArray_Get(&context->layoutElements, childIndex);
             openLayoutElement->dimensions.width += child->dimensions.width;
-            openLayoutElement->dimensions.height = CLAY__MAX(openLayoutElement->dimensions.height, child->dimensions.height + topBottomPadding);
+            openLayoutElement->dimensions.height = CLAY__MAX(openLayoutElement->dimensions.height, child->dimensions.height + layoutConfig->padding.top + layoutConfig->padding.bottom);
             // Minimum size of child elements doesn't matter to scroll containers as they can shrink and hide their contents
             if (!elementHasScrollHorizontal) {
                 openLayoutElement->minDimensions.width += child->minDimensions.width;
             }
             if (!elementHasScrollVertical) {
-                openLayoutElement->minDimensions.height = CLAY__MAX(openLayoutElement->minDimensions.height, child->minDimensions.height + topBottomPadding);
+                openLayoutElement->minDimensions.height = CLAY__MAX(openLayoutElement->minDimensions.height, child->minDimensions.height + layoutConfig->padding.top + layoutConfig->padding.bottom);
             }
             Clay__int32_tArray_Add(&context->layoutElementChildren, childIndex);
         }
@@ -1693,19 +1659,18 @@ void Clay__CloseElement(void) {
         openLayoutElement->minDimensions.width += childGap;
     }
     else if (layoutConfig->layoutDirection == CLAY_TOP_TO_BOTTOM) {
-        openLayoutElement->dimensions.height = topBottomPadding;
-        openLayoutElement->minDimensions.height = topBottomPadding;
+        openLayoutElement->dimensions.height = (float)(layoutConfig->padding.top + layoutConfig->padding.bottom);
         for (int32_t i = 0; i < openLayoutElement->childrenOrTextContent.children.length; i++) {
             int32_t childIndex = Clay__int32_tArray_GetValue(&context->layoutElementChildrenBuffer, (int)context->layoutElementChildrenBuffer.length - openLayoutElement->childrenOrTextContent.children.length + i);
             Clay_LayoutElement *child = Clay_LayoutElementArray_Get(&context->layoutElements, childIndex);
             openLayoutElement->dimensions.height += child->dimensions.height;
-            openLayoutElement->dimensions.width = CLAY__MAX(openLayoutElement->dimensions.width, child->dimensions.width + leftRightPadding);
+            openLayoutElement->dimensions.width = CLAY__MAX(openLayoutElement->dimensions.width, child->dimensions.width + layoutConfig->padding.left + layoutConfig->padding.right);
             // Minimum size of child elements doesn't matter to scroll containers as they can shrink and hide their contents
             if (!elementHasScrollVertical) {
                 openLayoutElement->minDimensions.height += child->minDimensions.height;
             }
             if (!elementHasScrollHorizontal) {
-                openLayoutElement->minDimensions.width = CLAY__MAX(openLayoutElement->minDimensions.width, child->minDimensions.width + leftRightPadding);
+                openLayoutElement->minDimensions.width = CLAY__MAX(openLayoutElement->minDimensions.width, child->minDimensions.width + layoutConfig->padding.left + layoutConfig->padding.right);
             }
             Clay__int32_tArray_Add(&context->layoutElementChildren, childIndex);
         }
@@ -1786,7 +1751,7 @@ bool Clay__MemCmp(const char *s1, const char *s2, int32_t length);
             uint8x16_t v2 = vld1q_u8((const uint8_t *)s2);
 
             // Compare vectors
-            if (vminvq_u32(vreinterpretq_u32_u8(vceqq_u8(v1, v2))) != 0xFFFFFFFF) { // If there's a difference
+            if (vminvq_u32(vceqq_u8(v1, v2)) != 0xFFFFFFFF) { // If there's a difference
                 return false;
             }
 
@@ -1857,7 +1822,7 @@ void Clay__OpenTextElement(Clay_String text, Clay_TextElementConfig *textConfig)
     Clay__StringArray_Add(&context->layoutElementIdStrings, elementId.stringId);
     Clay_Dimensions textDimensions = { .width = textMeasured->unwrappedDimensions.width, .height = textConfig->lineHeight > 0 ? (float)textConfig->lineHeight : textMeasured->unwrappedDimensions.height };
     textElement->dimensions = textDimensions;
-    textElement->minDimensions = CLAY__INIT(Clay_Dimensions) { .width = textMeasured->minWidth, .height = textDimensions.height };
+    textElement->minDimensions = CLAY__INIT(Clay_Dimensions) { .width = textMeasured->unwrappedDimensions.height, .height = textDimensions.height }; // TODO not sure this is the best way to decide min width for text
     textElement->childrenOrTextContent.textElementData = Clay__TextElementDataArray_Add(&context->textElementData, CLAY__INIT(Clay__TextElementData) { .text = text, .preferredDimensions = textMeasured->unwrappedDimensions, .elementIndex = context->layoutElements.length - 1 });
     textElement->elementConfigs = CLAY__INIT(Clay__ElementConfigArraySlice) {
             .length = 1,
@@ -1880,58 +1845,58 @@ Clay_ElementId Clay__AttachId(Clay_ElementId elementId) {
     return elementId;
 }
 
-void Clay__ConfigureOpenElementPtr(const Clay_ElementDeclaration *declaration) {
+void Clay__ConfigureOpenElement(const Clay_ElementDeclaration declaration) {
     Clay_Context* context = Clay_GetCurrentContext();
     Clay_LayoutElement *openLayoutElement = Clay__GetOpenLayoutElement();
-    openLayoutElement->layoutConfig = Clay__StoreLayoutConfig(declaration->layout);
-    if ((declaration->layout.sizing.width.type == CLAY__SIZING_TYPE_PERCENT && declaration->layout.sizing.width.size.percent > 1) || (declaration->layout.sizing.height.type == CLAY__SIZING_TYPE_PERCENT && declaration->layout.sizing.height.size.percent > 1)) {
+    openLayoutElement->layoutConfig = Clay__StoreLayoutConfig(declaration.layout);
+    if ((declaration.layout.sizing.width.type == CLAY__SIZING_TYPE_PERCENT && declaration.layout.sizing.width.size.percent > 1) || (declaration.layout.sizing.height.type == CLAY__SIZING_TYPE_PERCENT && declaration.layout.sizing.height.size.percent > 1)) {
         context->errorHandler.errorHandlerFunction(CLAY__INIT(Clay_ErrorData) {
                 .errorType = CLAY_ERROR_TYPE_PERCENTAGE_OVER_1,
                 .errorText = CLAY_STRING("An element was configured with CLAY_SIZING_PERCENT, but the provided percentage value was over 1.0. Clay expects a value between 0 and 1, i.e. 20% is 0.2."),
                 .userData = context->errorHandler.userData });
     }
 
-    Clay_ElementId openLayoutElementId = declaration->id;
+    Clay_ElementId openLayoutElementId = declaration.id;
 
     openLayoutElement->elementConfigs.internalArray = &context->elementConfigs.internalArray[context->elementConfigs.length];
     Clay_SharedElementConfig *sharedConfig = NULL;
-    if (declaration->backgroundColor.a > 0) {
-        sharedConfig = Clay__StoreSharedElementConfig(CLAY__INIT(Clay_SharedElementConfig) { .backgroundColor = declaration->backgroundColor });
+    if (declaration.backgroundColor.a > 0) {
+        sharedConfig = Clay__StoreSharedElementConfig(CLAY__INIT(Clay_SharedElementConfig) { .backgroundColor = declaration.backgroundColor });
         Clay__AttachElementConfig(CLAY__INIT(Clay_ElementConfigUnion) { .sharedElementConfig = sharedConfig }, CLAY__ELEMENT_CONFIG_TYPE_SHARED);
     }
-    if (!Clay__MemCmp((char *)(&declaration->cornerRadius), (char *)(&Clay__CornerRadius_DEFAULT), sizeof(Clay_CornerRadius))) {
+    if (!Clay__MemCmp((char *)(&declaration.cornerRadius), (char *)(&Clay__CornerRadius_DEFAULT), sizeof(Clay_CornerRadius))) {
         if (sharedConfig) {
-            sharedConfig->cornerRadius = declaration->cornerRadius;
+            sharedConfig->cornerRadius = declaration.cornerRadius;
         } else {
-            sharedConfig = Clay__StoreSharedElementConfig(CLAY__INIT(Clay_SharedElementConfig) { .cornerRadius = declaration->cornerRadius });
+            sharedConfig = Clay__StoreSharedElementConfig(CLAY__INIT(Clay_SharedElementConfig) { .cornerRadius = declaration.cornerRadius });
             Clay__AttachElementConfig(CLAY__INIT(Clay_ElementConfigUnion) { .sharedElementConfig = sharedConfig }, CLAY__ELEMENT_CONFIG_TYPE_SHARED);
         }
     }
-    if (declaration->userData != 0) {
+    if (declaration.userData != 0) {
         if (sharedConfig) {
-            sharedConfig->userData = declaration->userData;
+            sharedConfig->userData = declaration.userData;
         } else {
-            sharedConfig = Clay__StoreSharedElementConfig(CLAY__INIT(Clay_SharedElementConfig) { .userData = declaration->userData });
+            sharedConfig = Clay__StoreSharedElementConfig(CLAY__INIT(Clay_SharedElementConfig) { .userData = declaration.userData });
             Clay__AttachElementConfig(CLAY__INIT(Clay_ElementConfigUnion) { .sharedElementConfig = sharedConfig }, CLAY__ELEMENT_CONFIG_TYPE_SHARED);
         }
     }
-    if (declaration->image.imageData) {
-        Clay__AttachElementConfig(CLAY__INIT(Clay_ElementConfigUnion) { .imageElementConfig = Clay__StoreImageElementConfig(declaration->image) }, CLAY__ELEMENT_CONFIG_TYPE_IMAGE);
+    if (declaration.image.imageData) {
+        Clay__AttachElementConfig(CLAY__INIT(Clay_ElementConfigUnion) { .imageElementConfig = Clay__StoreImageElementConfig(declaration.image) }, CLAY__ELEMENT_CONFIG_TYPE_IMAGE);
         Clay__int32_tArray_Add(&context->imageElementPointers, context->layoutElements.length - 1);
     }
-    if (declaration->floating.attachTo != CLAY_ATTACH_TO_NONE) {
-        Clay_FloatingElementConfig floatingConfig = declaration->floating;
+    if (declaration.floating.attachTo != CLAY_ATTACH_TO_NONE) {
+        Clay_FloatingElementConfig floatingConfig = declaration.floating;
         // This looks dodgy but because of the auto generated root element the depth of the tree will always be at least 2 here
         Clay_LayoutElement *hierarchicalParent = Clay_LayoutElementArray_Get(&context->layoutElements, Clay__int32_tArray_GetValue(&context->openLayoutElementStack, context->openLayoutElementStack.length - 2));
         if (hierarchicalParent) {
             uint32_t clipElementId = 0;
-            if (declaration->floating.attachTo == CLAY_ATTACH_TO_PARENT) {
+            if (declaration.floating.attachTo == CLAY_ATTACH_TO_PARENT) {
                 // Attach to the element's direct hierarchical parent
                 floatingConfig.parentId = hierarchicalParent->id;
                 if (context->openClipElementStack.length > 0) {
                     clipElementId = Clay__int32_tArray_GetValue(&context->openClipElementStack, (int)context->openClipElementStack.length - 1);
                 }
-            } else if (declaration->floating.attachTo == CLAY_ATTACH_TO_ELEMENT_WITH_ID) {
+            } else if (declaration.floating.attachTo == CLAY_ATTACH_TO_ELEMENT_WITH_ID) {
                 Clay_LayoutElementHashMapItem *parentItem = Clay__GetHashMapItem(floatingConfig.parentId);
                 if (!parentItem) {
                     context->errorHandler.errorHandlerFunction(CLAY__INIT(Clay_ErrorData) {
@@ -1939,17 +1904,14 @@ void Clay__ConfigureOpenElementPtr(const Clay_ElementDeclaration *declaration) {
                             .errorText = CLAY_STRING("A floating element was declared with a parentId, but no element with that ID was found."),
                             .userData = context->errorHandler.userData });
                 } else {
-                    clipElementId = Clay__int32_tArray_GetValue(&context->layoutElementClipElementIds, (int32_t)(parentItem->layoutElement - context->layoutElements.internalArray));
+                    clipElementId = Clay__int32_tArray_GetValue(&context->layoutElementClipElementIds, parentItem->layoutElement - context->layoutElements.internalArray);
                 }
-            } else if (declaration->floating.attachTo == CLAY_ATTACH_TO_ROOT) {
+            } else if (declaration.floating.attachTo == CLAY_ATTACH_TO_ROOT) {
                 floatingConfig.parentId = Clay__HashString(CLAY_STRING("Clay__RootContainer"), 0, 0).id;
             }
             if (!openLayoutElementId.id) {
                 openLayoutElementId = Clay__HashString(CLAY_STRING("Clay__FloatingContainer"), context->layoutElementTreeRoots.length, 0);
             }
-            int32_t currentElementIndex = Clay__int32_tArray_GetValue(&context->openLayoutElementStack, context->openLayoutElementStack.length - 1);
-            Clay__int32_tArray_Set(&context->layoutElementClipElementIds, currentElementIndex, clipElementId);
-            Clay__int32_tArray_Add(&context->openClipElementStack, clipElementId);
             Clay__LayoutElementTreeRootArray_Add(&context->layoutElementTreeRoots, CLAY__INIT(Clay__LayoutElementTreeRoot) {
                     .layoutElementIndex = Clay__int32_tArray_GetValue(&context->openLayoutElementStack, context->openLayoutElementStack.length - 1),
                     .parentId = floatingConfig.parentId,
@@ -1959,8 +1921,8 @@ void Clay__ConfigureOpenElementPtr(const Clay_ElementDeclaration *declaration) {
             Clay__AttachElementConfig(CLAY__INIT(Clay_ElementConfigUnion) { .floatingElementConfig = Clay__StoreFloatingElementConfig(floatingConfig) }, CLAY__ELEMENT_CONFIG_TYPE_FLOATING);
         }
     }
-    if (declaration->custom.customData) {
-        Clay__AttachElementConfig(CLAY__INIT(Clay_ElementConfigUnion) { .customElementConfig = Clay__StoreCustomElementConfig(declaration->custom) }, CLAY__ELEMENT_CONFIG_TYPE_CUSTOM);
+    if (declaration.custom.customData) {
+        Clay__AttachElementConfig(CLAY__INIT(Clay_ElementConfigUnion) { .customElementConfig = Clay__StoreCustomElementConfig(declaration.custom) }, CLAY__ELEMENT_CONFIG_TYPE_CUSTOM);
     }
 
     if (openLayoutElementId.id != 0) {
@@ -1969,8 +1931,8 @@ void Clay__ConfigureOpenElementPtr(const Clay_ElementDeclaration *declaration) {
         openLayoutElementId = Clay__GenerateIdForAnonymousElement(openLayoutElement);
     }
 
-    if (declaration->scroll.horizontal | declaration->scroll.vertical) {
-        Clay__AttachElementConfig(CLAY__INIT(Clay_ElementConfigUnion) { .scrollElementConfig = Clay__StoreScrollElementConfig(declaration->scroll) }, CLAY__ELEMENT_CONFIG_TYPE_SCROLL);
+    if (declaration.scroll.horizontal | declaration.scroll.vertical) {
+        Clay__AttachElementConfig(CLAY__INIT(Clay_ElementConfigUnion) { .scrollElementConfig = Clay__StoreScrollElementConfig(declaration.scroll) }, CLAY__ELEMENT_CONFIG_TYPE_SCROLL);
         Clay__int32_tArray_Add(&context->openClipElementStack, (int)openLayoutElement->id);
         // Retrieve or create cached data to track scroll position across frames
         Clay__ScrollContainerDataInternal *scrollOffset = CLAY__NULL;
@@ -1989,13 +1951,9 @@ void Clay__ConfigureOpenElementPtr(const Clay_ElementDeclaration *declaration) {
             scrollOffset->scrollPosition = Clay__QueryScrollOffset(scrollOffset->elementId, context->queryScrollOffsetUserData);
         }
     }
-    if (!Clay__MemCmp((char *)(&declaration->border.width), (char *)(&Clay__BorderWidth_DEFAULT), sizeof(Clay_BorderWidth))) {
-        Clay__AttachElementConfig(CLAY__INIT(Clay_ElementConfigUnion) { .borderElementConfig = Clay__StoreBorderElementConfig(declaration->border) }, CLAY__ELEMENT_CONFIG_TYPE_BORDER);
+    if (!Clay__MemCmp((char *)(&declaration.border.width), (char *)(&Clay__BorderWidth_DEFAULT), sizeof(Clay_BorderWidth))) {
+        Clay__AttachElementConfig(CLAY__INIT(Clay_ElementConfigUnion) { .borderElementConfig = Clay__StoreBorderElementConfig(declaration.border) }, CLAY__ELEMENT_CONFIG_TYPE_BORDER);
     }
-}
-
-void Clay__ConfigureOpenElement(const Clay_ElementDeclaration declaration) {
-    Clay__ConfigureOpenElementPtr(&declaration);
 }
 
 void Clay__InitializeEphemeralMemory(Clay_Context* context) {
@@ -2054,11 +2012,54 @@ void Clay__InitializePersistentMemory(Clay_Context* context) {
     context->arenaResetOffset = arena->nextAllocation;
 }
 
-const float CLAY__EPSILON = 0.01;
+void Clay__CompressChildrenAlongAxis(bool xAxis, float totalSizeToDistribute, Clay__int32_tArray resizableContainerBuffer) {
+    Clay_Context* context = Clay_GetCurrentContext();
+    Clay__int32_tArray largestContainers = context->openClipElementStack;
 
-bool Clay__FloatEqual(float left, float right) {
-    float subtracted = left - right;
-    return subtracted < CLAY__EPSILON && subtracted > -CLAY__EPSILON;
+    while (totalSizeToDistribute > 0.1) {
+        largestContainers.length = 0;
+        float largestSize = 0;
+        float targetSize = 0;
+        for (int32_t i = 0; i < resizableContainerBuffer.length; ++i) {
+            Clay_LayoutElement *childElement = Clay_LayoutElementArray_Get(&context->layoutElements, Clay__int32_tArray_GetValue(&resizableContainerBuffer, i));
+            float childSize = xAxis ? childElement->dimensions.width : childElement->dimensions.height;
+            if ((childSize - largestSize) < 0.1 && (childSize - largestSize) > -0.1) {
+                Clay__int32_tArray_Add(&largestContainers, Clay__int32_tArray_GetValue(&resizableContainerBuffer, i));
+            } else if (childSize > largestSize) {
+                targetSize = largestSize;
+                largestSize = childSize;
+                largestContainers.length = 0;
+                Clay__int32_tArray_Add(&largestContainers, Clay__int32_tArray_GetValue(&resizableContainerBuffer, i));
+            }
+            else if (childSize > targetSize) {
+                targetSize = childSize;
+            }
+        }
+
+        if (largestContainers.length == 0) {
+            return;
+        }
+
+        targetSize = CLAY__MAX(targetSize, (largestSize * largestContainers.length) - totalSizeToDistribute) / largestContainers.length;
+
+        for (int32_t childOffset = 0; childOffset < largestContainers.length; childOffset++) {
+            int32_t childIndex = Clay__int32_tArray_GetValue(&largestContainers, childOffset);
+            Clay_LayoutElement *childElement = Clay_LayoutElementArray_Get(&context->layoutElements, childIndex);
+            float *childSize = xAxis ? &childElement->dimensions.width : &childElement->dimensions.height;
+            float childMinSize = xAxis ? childElement->minDimensions.width : childElement->minDimensions.height;
+            float oldChildSize = *childSize;
+            *childSize = CLAY__MAX(childMinSize, targetSize);
+            totalSizeToDistribute -= (oldChildSize - *childSize);
+            if (*childSize == childMinSize) {
+                for (int32_t i = 0; i < resizableContainerBuffer.length; i++) {
+                    if (Clay__int32_tArray_GetValue(&resizableContainerBuffer, i) == childIndex) {
+                        Clay__int32_tArray_RemoveSwapback(&resizableContainerBuffer, i);
+                        break;
+                    }
+                }
+            }
+        }
+    }
 }
 
 void Clay__SizeContainersAlongAxis(bool xAxis) {
@@ -2096,7 +2097,7 @@ void Clay__SizeContainersAlongAxis(bool xAxis) {
             int32_t growContainerCount = 0;
             float parentSize = xAxis ? parent->dimensions.width : parent->dimensions.height;
             float parentPadding = (float)(xAxis ? (parent->layoutConfig->padding.left + parent->layoutConfig->padding.right) : (parent->layoutConfig->padding.top + parent->layoutConfig->padding.bottom));
-            float innerContentSize = 0, totalPaddingAndChildGaps = parentPadding;
+            float innerContentSize = 0, growContainerContentSize = 0, totalPaddingAndChildGaps = parentPadding;
             bool sizingAlongAxis = (xAxis && parentStyleConfig->layoutDirection == CLAY_LEFT_TO_RIGHT) || (!xAxis && parentStyleConfig->layoutDirection == CLAY_TOP_TO_BOTTOM);
             resizableContainerBuffer.length = 0;
             float parentChildGap = parentStyleConfig->childGap;
@@ -2122,6 +2123,7 @@ void Clay__SizeContainersAlongAxis(bool xAxis) {
                 if (sizingAlongAxis) {
                     innerContentSize += (childSizing.type == CLAY__SIZING_TYPE_PERCENT ? 0 : childSize);
                     if (childSizing.type == CLAY__SIZING_TYPE_GROW) {
+                        growContainerContentSize += childSize;
                         growContainerCount++;
                     }
                     if (childOffset > 0) {
@@ -2160,83 +2162,25 @@ void Clay__SizeContainersAlongAxis(bool xAxis) {
                         }
                     }
                     // Scrolling containers preferentially compress before others
-                    while (sizeToDistribute < -CLAY__EPSILON && resizableContainerBuffer.length > 0) {
-                        float largest = 0;
-                        float secondLargest = 0;
-                        float widthToAdd = sizeToDistribute;
-                        for (int childIndex = 0; childIndex < resizableContainerBuffer.length; childIndex++) {
-                            Clay_LayoutElement *child = Clay_LayoutElementArray_Get(&context->layoutElements, Clay__int32_tArray_GetValue(&resizableContainerBuffer, childIndex));
-                            float childSize = xAxis ? child->dimensions.width : child->dimensions.height;
-                            if (Clay__FloatEqual(childSize, largest)) { continue; }
-                            if (childSize > largest) {
-                                secondLargest = largest;
-                                largest = childSize;
-                            }
-                            if (childSize < largest) {
-                                secondLargest = CLAY__MAX(secondLargest, childSize);
-                                widthToAdd = secondLargest - largest;
-                            }
-                        }
-
-                        widthToAdd = CLAY__MAX(widthToAdd, sizeToDistribute / resizableContainerBuffer.length);
-
-                        for (int childIndex = 0; childIndex < resizableContainerBuffer.length; childIndex++) {
-                            Clay_LayoutElement *child = Clay_LayoutElementArray_Get(&context->layoutElements, Clay__int32_tArray_GetValue(&resizableContainerBuffer, childIndex));
-                            float *childSize = xAxis ? &child->dimensions.width : &child->dimensions.height;
-                            float minSize = xAxis ? child->minDimensions.width : child->minDimensions.height;
-                            float previousWidth = *childSize;
-                            if (Clay__FloatEqual(*childSize, largest)) {
-                                *childSize += widthToAdd;
-                                if (*childSize <= minSize) {
-                                    *childSize = minSize;
-                                    Clay__int32_tArray_RemoveSwapback(&resizableContainerBuffer, childIndex--);
-                                }
-                                sizeToDistribute -= (*childSize - previousWidth);
-                            }
-                        }
-                    }
+                    Clay__CompressChildrenAlongAxis(xAxis, -sizeToDistribute, resizableContainerBuffer);
                 // The content is too small, allow SIZING_GROW containers to expand
                 } else if (sizeToDistribute > 0 && growContainerCount > 0) {
-                    for (int childIndex = 0; childIndex < resizableContainerBuffer.length; childIndex++) {
-                        Clay_LayoutElement *child = Clay_LayoutElementArray_Get(&context->layoutElements, Clay__int32_tArray_GetValue(&resizableContainerBuffer, childIndex));
-                        Clay__SizingType childSizing = xAxis ? child->layoutConfig->sizing.width.type : child->layoutConfig->sizing.height.type;
-                        if (childSizing != CLAY__SIZING_TYPE_GROW) {
-                            Clay__int32_tArray_RemoveSwapback(&resizableContainerBuffer, childIndex--);
-                        }
-                    }
-                    while (sizeToDistribute > CLAY__EPSILON && resizableContainerBuffer.length > 0) {
-                        float smallest = CLAY__MAXFLOAT;
-                        float secondSmallest = CLAY__MAXFLOAT;
-                        float widthToAdd = sizeToDistribute;
-                        for (int childIndex = 0; childIndex < resizableContainerBuffer.length; childIndex++) {
-                            Clay_LayoutElement *child = Clay_LayoutElementArray_Get(&context->layoutElements, Clay__int32_tArray_GetValue(&resizableContainerBuffer, childIndex));
-                            float childSize = xAxis ? child->dimensions.width : child->dimensions.height;
-                            if (Clay__FloatEqual(childSize, smallest)) { continue; }
-                            if (childSize < smallest) {
-                                secondSmallest = smallest;
-                                smallest = childSize;
+                    float targetSize = (sizeToDistribute + growContainerContentSize) / (float)growContainerCount;
+                    for (int32_t childOffset = 0; childOffset < resizableContainerBuffer.length; childOffset++) {
+                        Clay_LayoutElement *childElement = Clay_LayoutElementArray_Get(&context->layoutElements, Clay__int32_tArray_GetValue(&resizableContainerBuffer, childOffset));
+                        Clay_SizingAxis childSizing = xAxis ? childElement->layoutConfig->sizing.width : childElement->layoutConfig->sizing.height;
+                        if (childSizing.type == CLAY__SIZING_TYPE_GROW) {
+                            float *childSize = xAxis ? &childElement->dimensions.width : &childElement->dimensions.height;
+                            float *minSize = xAxis ? &childElement->minDimensions.width : &childElement->minDimensions.height;
+                            if (targetSize < *minSize) {
+                                growContainerContentSize -= *minSize;
+                                Clay__int32_tArray_RemoveSwapback(&resizableContainerBuffer, childOffset);
+                                growContainerCount--;
+                                targetSize = (sizeToDistribute + growContainerContentSize) / (float)growContainerCount;
+                                childOffset = -1;
+                                continue;
                             }
-                            if (childSize > smallest) {
-                                secondSmallest = CLAY__MIN(secondSmallest, childSize);
-                                widthToAdd = secondSmallest - smallest;
-                            }
-                        }
-
-                        widthToAdd = CLAY__MIN(widthToAdd, sizeToDistribute / resizableContainerBuffer.length);
-
-                        for (int childIndex = 0; childIndex < resizableContainerBuffer.length; childIndex++) {
-                            Clay_LayoutElement *child = Clay_LayoutElementArray_Get(&context->layoutElements, Clay__int32_tArray_GetValue(&resizableContainerBuffer, childIndex));
-                            float *childSize = xAxis ? &child->dimensions.width : &child->dimensions.height;
-                            float maxSize = xAxis ? child->layoutConfig->sizing.width.size.minMax.max : child->layoutConfig->sizing.height.size.minMax.max;
-                            float previousWidth = *childSize;
-                            if (Clay__FloatEqual(*childSize, smallest)) {
-                                *childSize += widthToAdd;
-                                if (*childSize >= maxSize) {
-                                    *childSize = maxSize;
-                                    Clay__int32_tArray_RemoveSwapback(&resizableContainerBuffer, childIndex--);
-                                }
-                                sizeToDistribute -= (*childSize - previousWidth);
-                            }
+                            *childSize = targetSize;
                         }
                     }
                 }
@@ -2245,25 +2189,25 @@ void Clay__SizeContainersAlongAxis(bool xAxis) {
                 for (int32_t childOffset = 0; childOffset < resizableContainerBuffer.length; childOffset++) {
                     Clay_LayoutElement *childElement = Clay_LayoutElementArray_Get(&context->layoutElements, Clay__int32_tArray_GetValue(&resizableContainerBuffer, childOffset));
                     Clay_SizingAxis childSizing = xAxis ? childElement->layoutConfig->sizing.width : childElement->layoutConfig->sizing.height;
-                    float minSize = xAxis ? childElement->minDimensions.width : childElement->minDimensions.height;
                     float *childSize = xAxis ? &childElement->dimensions.width : &childElement->dimensions.height;
 
                     if (!xAxis && Clay__ElementHasConfig(childElement, CLAY__ELEMENT_CONFIG_TYPE_IMAGE)) {
                         continue; // Currently we don't support resizing aspect ratio images on the Y axis because it would break the ratio
                     }
 
+                    // If we're laying out the children of a scroll panel, grow containers expand to the height of the inner content, not the outer container
                     float maxSize = parentSize - parentPadding;
-                    // If we're laying out the children of a scroll panel, grow containers expand to the size of the inner content, not the outer container
                     if (Clay__ElementHasConfig(parent, CLAY__ELEMENT_CONFIG_TYPE_SCROLL)) {
                         Clay_ScrollElementConfig *scrollElementConfig = Clay__FindElementConfigWithType(parent, CLAY__ELEMENT_CONFIG_TYPE_SCROLL).scrollElementConfig;
                         if (((xAxis && scrollElementConfig->horizontal) || (!xAxis && scrollElementConfig->vertical))) {
                             maxSize = CLAY__MAX(maxSize, innerContentSize);
                         }
                     }
-                    if (childSizing.type == CLAY__SIZING_TYPE_GROW) {
+                    if (childSizing.type == CLAY__SIZING_TYPE_FIT) {
+                        *childSize = CLAY__MAX(childSizing.size.minMax.min, CLAY__MIN(*childSize, maxSize));
+                    } else if (childSizing.type == CLAY__SIZING_TYPE_GROW) {
                         *childSize = CLAY__MIN(maxSize, childSizing.size.minMax.max);
                     }
-                    *childSize = CLAY__MAX(minSize, CLAY__MIN(*childSize, maxSize));
                 }
             }
         }
@@ -2716,7 +2660,7 @@ void Clay__CalculateFinalLayout(void) {
                                         .letterSpacing = textElementConfig->letterSpacing,
                                         .lineHeight = textElementConfig->lineHeight,
                                     }},
-                                    .userData = textElementConfig->userData,
+                                    .userData = sharedConfig->userData,
                                     .id = Clay__HashNumber(lineIndex, currentElement->id).id,
                                     .zIndex = root->zIndex,
                                     .commandType = CLAY_RENDER_COMMAND_TYPE_TEXT,
@@ -3651,11 +3595,11 @@ uint32_t Clay_MinMemorySize(void) {
     Clay__Context_Allocate_Arena(&fakeContext.internalArena);
     Clay__InitializePersistentMemory(&fakeContext);
     Clay__InitializeEphemeralMemory(&fakeContext);
-    return (uint32_t)fakeContext.internalArena.nextAllocation + 128;
+    return fakeContext.internalArena.nextAllocation + 128;
 }
 
 CLAY_WASM_EXPORT("Clay_CreateArenaWithCapacityAndMemory")
-Clay_Arena Clay_CreateArenaWithCapacityAndMemory(size_t capacity, void *memory) {
+Clay_Arena Clay_CreateArenaWithCapacityAndMemory(uint32_t capacity, void *memory) {
     Clay_Arena arena = {
         .capacity = capacity,
         .memory = (char *)memory
@@ -3704,7 +3648,7 @@ void Clay_SetPointerState(Clay_Vector2 position, bool isPointerDown) {
             context->treeNodeVisited.internalArray[dfsBuffer.length - 1] = true;
             Clay_LayoutElement *currentElement = Clay_LayoutElementArray_Get(&context->layoutElements, Clay__int32_tArray_GetValue(&dfsBuffer, (int)dfsBuffer.length - 1));
             Clay_LayoutElementHashMapItem *mapItem = Clay__GetHashMapItem(currentElement->id); // TODO think of a way around this, maybe the fact that it's essentially a binary tree limits the cost, but the worst case is not great
-            int32_t clipElementId = Clay__int32_tArray_GetValue(&context->layoutElementClipElementIds, (int32_t)(currentElement - context->layoutElements.internalArray));
+            int32_t clipElementId = Clay__int32_tArray_GetValue(&context->layoutElementClipElementIds, currentElement - context->layoutElements.internalArray);
             Clay_LayoutElementHashMapItem *clipItem = Clay__GetHashMapItem(clipElementId);
             Clay_BoundingBox elementBox = mapItem->boundingBox;
             elementBox.x -= root->pointerOffset.x;

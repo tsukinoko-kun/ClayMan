@@ -1,4 +1,4 @@
-
+//old
 #ifndef __STDC_VERSION__
     #define __STDC_VERSION__  199901L
 #endif
@@ -9,6 +9,7 @@
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
 
 #ifndef M_PI
     #define M_PI 3.14159
@@ -300,18 +301,18 @@ static void Clay_SDL2_Render(SDL_Renderer *renderer, Clay_RenderCommandArray ren
                 memcpy(cloned, config->stringContents.chars, config->stringContents.length);
                 TTF_Font* font = fonts[config->fontId].font;
                 SDL_Surface *surface = TTF_RenderUTF8_Blended(font, cloned, (SDL_Color) {
-                    .r = (Uint8)config->textColor.r,
-                    .g = (Uint8)config->textColor.g,
-                    .b = (Uint8)config->textColor.b,
-                    .a = (Uint8)config->textColor.a,
+                        .r = (Uint8)config->textColor.r,
+                        .g = (Uint8)config->textColor.g,
+                        .b = (Uint8)config->textColor.b,
+                        .a = (Uint8)config->textColor.a,
                 });
                 SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
 
                 SDL_Rect destination = (SDL_Rect){
-                    .x = (int)boundingBox.x,
-                    .y = (int)boundingBox.y,
-                    .w = (int)boundingBox.width,
-                    .h = (int)boundingBox.height,
+                        .x = (int)boundingBox.x,
+                        .y = (int)boundingBox.y,
+                        .w = (int)boundingBox.width,
+                        .h = (int)boundingBox.height,
                 };
                 SDL_RenderCopy(renderer, texture, NULL, &destination);
 
@@ -322,10 +323,10 @@ static void Clay_SDL2_Render(SDL_Renderer *renderer, Clay_RenderCommandArray ren
             }
             case CLAY_RENDER_COMMAND_TYPE_SCISSOR_START: {
                 currentClippingRectangle = (SDL_Rect) {
-                    .x = (int)boundingBox.x,
-                    .y = (int)boundingBox.y,
-                    .w = (int)boundingBox.width,
-                    .h = (int)boundingBox.height,
+                        .x = (int)boundingBox.x,
+                        .y = (int)boundingBox.y,
+                        .w = (int)boundingBox.width,
+                        .h = (int)boundingBox.height,
                 };
                 SDL_RenderSetClipRect(renderer, &currentClippingRectangle);
                 break;
